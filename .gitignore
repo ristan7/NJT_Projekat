@@ -1,0 +1,47 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors / IDE
+.idea/
+.vscode/
+nbproject/private/
+*.iml
+**/.project
+**/.classpath
+**/.settings/
+
+# Java / Maven / Gradle
+e_learning_platforma_njt_backend/target/
+e_learning_platforma_njt_backend/build/
+e_learning_platforma_njt_backend/out/
+.mvn/wrapper/maven-wrapper.jar
+
+# Spring Boot lokalni config / tajne (ne push-uj realne vrednosti)
+e_learning_platforma_njt_backend/src/main/resources/application.properties
+e_learning_platforma_njt_backend/src/main/resources/application-*.properties
+e_learning_platforma_njt_backend/*.jks
+e_learning_platforma_njt_backend/*.keystore
+e_learning_platforma_njt_backend/*.p12
+
+# Node / React
+e_learning_platforma_njt_frontend/node_modules/
+e_learning_platforma_njt_frontend/build/
+e_learning_platforma_njt_frontend/.parcel-cache/
+e_learning_platforma_njt_frontend/.next/
+e_learning_platforma_njt_frontend/dist/
+
+# Frontend env fajlovi (lokalni, ne u repo)
+e_learning_platforma_njt_frontend/.env
+e_learning_platforma_njt_frontend/.env.*
+!e_learning_platforma_njt_frontend/.env.example
+
+# Logovi
+logs/
+*.log
+e_learning_platforma_njt_backend/*.log
+e_learning_platforma_njt_frontend/*.log
+
+# Misc
+*.swp
+*.tmp

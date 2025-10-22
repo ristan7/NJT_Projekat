@@ -1,0 +1,112 @@
+.nf-wrap {
+    padding: 24px 12px 48px;
+    display: grid;
+    place-items: start center;
+}
+
+.nf-card {
+    width: min(820px, 92vw);
+    background: #fff;
+    border: 1px solid rgba(15, 23, 42, .08);
+    border-radius: 16px;
+    box-shadow: 0 10px 28px rgba(2, 6, 23, .08);
+    padding: 22px 20px;
+}
+
+.nf-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 22px;
+    color: #0F172A;
+    margin-bottom: 18px;
+}
+
+.nf-emoji {
+    font-size: 22px;
+}
+
+.nf-field {
+    margin-bottom: 16px;
+}
+
+.nf-label {
+    display: block;
+    font-weight: 600;
+    color: #0F172A;
+    margin-bottom: 8px;
+}
+
+.nf-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid rgba(15, 23, 42, .12);
+    border-radius: 12px;
+    outline: none;
+    background: #fff;
+    font-size: 15px;
+}
+
+.nf-input:focus {
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, .15);
+}
+
+.nf-textarea {
+    min-height: 140px;
+    resize: vertical;
+}
+
+.nf-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.nf-col {
+    min-width: 0;
+}
+
+.nf-err {
+    margin-top: 6px;
+    color: #b42318;
+    font-size: .92rem;
+}
+
+.invalid {
+    border-color: #b42318 !important;
+}
+
+.nf-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.btn {
+    border: 1px solid transparent;
+    background: #fff;
+    cursor: pointer;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 600;
+}
+
+.btn.primary {
+    background: linear-gradient(135deg, #3B82F6, #2563EB);
+    color: #fff;
+}
+
+.btn.ghost {
+    background: transparent;
+    border-color: rgba(15, 23, 42, .18);
+}
+
+@media (max-width:700px) {
+    .nf-row {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,226 @@
+/* Layout helpers */
+.container {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+.section {
+    padding: 24px 0;
+}
+
+.muted {
+    color: #6b7280;
+}
+
+.btn {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    background: #111827;
+    color: white;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-weight: 600;
+}
+
+.btn.sm {
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+.btn.ghost {
+    background: transparent;
+    color: #2563eb;
+    border: 1px solid #d1d5db;
+}
+
+.btn.primary {
+    background: #2563eb;
+    color: #fff;
+}
+
+body.theme-red .btn.primary {
+    background: #d61f26;
+}
+
+body.theme-red a.link {
+    color: #d61f26;
+}
+
+/* Hero */
+.hero {
+    padding: 48px 0 16px;
+    background: radial-gradient(1000px 300px at 70% -10%, #e6f1ff, transparent);
+}
+
+.hero--compressed {
+    padding-bottom: 0;
+}
+
+.hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    align-items: center;
+}
+
+.hero-copy h1 {
+    font-size: 40px;
+    margin: 0 0 8px;
+}
+
+/* Profile card */
+.profile-card {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #e5e7eb;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+}
+
+.avatar.xl {
+    width: 80px;
+    height: 80px;
+    font-size: 22px;
+}
+
+.profile-meta .profile-name {
+    font-weight: 700;
+}
+
+/* grid */
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+/* card */
+.card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+}
+
+.card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+a.link {
+    color: #2563eb;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+/* notes */
+.note-list {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.note-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border: 1px solid #eef2f7;
+    border-radius: 12px;
+}
+
+.note-title {
+    font-weight: 700;
+}
+
+.note-text {
+    font-size: 14px;
+}
+
+/* skeleton */
+.skeleton-list {
+    display: grid;
+    gap: 8px;
+}
+
+.skeleton {
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #f3f4f6, #e5e7eb, #f3f4f6);
+    background-size: 400% 100%;
+    animation: shimmer 1.3s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 0% 0
+    }
+
+    100% {
+        background-position: 400% 0
+    }
+}
+
+/* courses */
+.courses {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+.course {
+    display: block;
+    padding: 10px;
+    border: 1px solid #eef2f7;
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+}
+
+.course .thumb {
+    height: 96px;
+    border-radius: 8px;
+    background: #e5e7eb;
+    margin-bottom: 8px;
+}
+
+.course-title {
+    font-weight: 700;
+}
+
+.bell {
+    position: relative;
+    font-size: 20px;
+    text-decoration: none;
+}
+
+.badge-dot {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    background: #3B82F6;
+    color: #fff;
+    border-radius: 9px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
