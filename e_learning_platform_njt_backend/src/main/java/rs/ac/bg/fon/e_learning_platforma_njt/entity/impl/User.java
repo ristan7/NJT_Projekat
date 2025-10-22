@@ -1,4 +1,4 @@
-// src/main/java/.../entity/impl/User.java
+// src/main/java/rs/ac/bg/fon/e_learning_platforma_njt/entity/impl/User.java
 package rs.ac.bg.fon.e_learning_platforma_njt.entity.impl;
 
 import jakarta.persistence.*;
@@ -8,6 +8,8 @@ import jakarta.validation.constraints.Size;
 import rs.ac.bg.fon.e_learning_platforma_njt.entity.MyEntity;
 import rs.ac.bg.fon.e_learning_platforma_njt.entity.lookup.Role;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -41,7 +43,6 @@ public class User implements MyEntity {
     @Column(name = "password", nullable = false, length = 255)
     private String passwordHash;
 
-    // NEW
     @Size(max = 80)
     @Column(name = "first_name", length = 80)
     private String firstName;
@@ -58,6 +59,17 @@ public class User implements MyEntity {
     )
     private Role role;
 
+    // ===================== NEW: dvosmerna veza ka Notification =====================
+    @OneToMany(
+            mappedBy = "user",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    @OrderBy("sentAt DESC")
+    private List<Notification> notifications = new ArrayList<>();
+
+    // ===================== konstruktori =====================
     public User() {
     }
 
@@ -65,7 +77,24 @@ public class User implements MyEntity {
         this.userId = userId;
     }
 
-    // getters/setters
+    // ===================== helper metode za održavanje veze =====================
+    public void addNotification(Notification n) {
+        if (n == null) {
+            return;
+        }
+        notifications.add(n);
+        n.setUser(this);
+    }
+
+    public void removeNotification(Notification n) {
+        if (n == null) {
+            return;
+        }
+        notifications.remove(n);
+        n.setUser(null);
+    }
+
+    // ===================== get/set =====================
     public Long getUserId() {
         return userId;
     }
@@ -122,6 +151,21 @@ public class User implements MyEntity {
         this.lastName = lastName;
     }
 
+    public List<Notification> getNotifications() {
+        return notifications;
+    }
+
+    public void setNotifications(List<Notification> notifications) {
+        // održavanje konzistentnosti obe strane veze
+        this.notifications.clear();
+        if (notifications != null) {
+            for (Notification n : notifications) {
+                addNotification(n);
+            }
+        }
+    }
+
+    // ===================== equals/hashCode/toString =====================
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -142,5 +186,4 @@ public class User implements MyEntity {
     public String toString() {
         return "User: " + username + " (" + email + ")";
     }
-    
 }
