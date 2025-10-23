@@ -80,6 +80,12 @@ export async function getUsers() {
   return data;
 }
 
+// ---------- ADMIN: CHANGE ROLE ----------
+export async function updateUserRole(userId, roleId) {
+  await http.patch(`/auth/admin/users/${userId}`, { roleId });
+}
+
+
 // ---------- STUB KURSEVA (Home) ----------
 export async function getRecommendedCourses() {
   return Promise.resolve([

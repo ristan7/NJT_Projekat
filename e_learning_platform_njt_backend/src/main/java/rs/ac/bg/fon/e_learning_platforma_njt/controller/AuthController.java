@@ -14,6 +14,9 @@ import rs.ac.bg.fon.e_learning_platforma_njt.dto.impl.RegisterRequest;
 import rs.ac.bg.fon.e_learning_platforma_njt.dto.impl.UserDto;
 import rs.ac.bg.fon.e_learning_platforma_njt.service.AuthService;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+import io.swagger.v3.oas.annotations.Operation;
+
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/auth")
@@ -53,5 +56,27 @@ public class AuthController {
     @GetMapping("/users")
     public ResponseEntity<List<UserDto>> allUsers() {
         return ResponseEntity.ok(authService.listAllUsers());
+    }
+
+    // ===== NOVO: ADMIN-only promena role preko postojećeg UserDto =====
+    @PatchMapping("/admin/users/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Promeni rolu korisniku (ADMIN-only) — kroz UserDto šalje se roleId")
+    public ResponseEntity<Void> changeUserRole(
+            @PathVariable Long id,
+            @RequestBody UserDto body, // ⬅️ bez @Valid da ne pali validaciju za email/ime
+            Authentication auth
+    ) throws Exception {
+
+        Long roleId = body != null ? body.getRoleId() : null;
+        if (roleId == null) {
+            // pošto ne koristimo @Valid, sami validiramo da je roleId prisutan
+            throw new IllegalArgumentException("roleId is required");
+        }
+
+        // (opciono) možeš ovde ograničiti na {1,2,3} ako želiš striktno:
+        // if (roleId < 1 || roleId > 3) throw new IllegalArgumentException("Invalid roleId");
+        authService.changeUserRole(id, roleId, auth.getName());
+        return ResponseEntity.noContent().build();
     }
 }

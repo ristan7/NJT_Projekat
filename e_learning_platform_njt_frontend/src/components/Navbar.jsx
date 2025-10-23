@@ -22,13 +22,11 @@ export default function Navbar() {
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const isLoggedIn = !!token;
 
-  // ------------------ LOAD USER + BADGE (tiho) ------------------
   useEffect(() => {
     if (!isLoggedIn) return;
 
     let alive = true;
 
-    // 1) Tiho osveži /me (bez auto-logouta ako padne)
     (async () => {
       try {
         const fresh = await getMe();
@@ -42,7 +40,6 @@ export default function Navbar() {
       }
     })();
 
-    // 2) Badge (unread)
     (async () => {
       try {
         const u = getStoredUser() || me;
@@ -70,7 +67,6 @@ export default function Navbar() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn]);
 
-  // ------------------ LOGOUT ------------------
   function handleLogout() {
     try {
       fetch("http://localhost:8080/api/auth/logout", {
@@ -88,7 +84,6 @@ export default function Navbar() {
     navigate("/login");
   }
 
-  // ------------------ UI HELPERS ------------------
   const displayName =
     [me?.firstName, me?.lastName].filter(Boolean).join(" ") ||
     me?.username ||
@@ -101,7 +96,8 @@ export default function Navbar() {
     opacity: isActive ? 1 : 0.85,
   });
 
-  // ------------------ RENDER ------------------
+  const isAdmin = me?.roleName === "ADMIN" || me?.roleId === 3;
+
   return (
     <nav className="nav">
       <div className="container nav-inner">
@@ -129,13 +125,19 @@ export default function Navbar() {
               <NavLink to="/" style={active} end>
                 Home
               </NavLink>
-              {/* NEW: Courses link */}
               <NavLink to="/courses" style={active}>
                 Courses
               </NavLink>
               <NavLink to="/notifications" style={active}>
                 Notifications
               </NavLink>
+
+              {/* ⬇️ ADMIN-ONLY LINK */}
+              {isAdmin && (
+                <NavLink to="/admin/change-role" style={active}>
+                  Change role
+                </NavLink>
+              )}
             </div>
 
             <div className="nav-right">

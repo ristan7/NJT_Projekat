@@ -17,6 +17,10 @@ import Courses from "./pages/Courses";
 import CourseDetails from "./pages/CourseDetails";
 import LessonView from "./pages/LessonView";
 
+import AdminRoute from "./components/AdminRoute";
+import AdminChangeRole from "./pages/AdminChangeRole";
+
+
 import "./App.css";
 
 function Layout({ children }) {
@@ -94,6 +98,17 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/admin/change-role"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <AdminChangeRole />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+
 
           {/* Public auth routes */}
           <Route path="/login" element={<Login />} />

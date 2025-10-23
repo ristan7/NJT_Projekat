@@ -62,7 +62,10 @@ public class SecurityConfig {
                 // AUTH javno
                 .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
+                // /me i /users zahtevaju login
                 .requestMatchers(HttpMethod.GET, "/api/auth/me", "/api/auth/users").authenticated()
+                // ⬇️ NOVO: ADMIN može da menja rolu korisniku (PATCH /api/auth/admin/users/{id})
+                .requestMatchers(HttpMethod.PATCH, "/api/auth/admin/users/*").hasRole("ADMIN")
                 // LOOKUPS javno (bez ograničenja na metodu – bezbedno je)
                 .requestMatchers("/api/notification-types/**",
                         "/api/course-levels/**",
@@ -87,6 +90,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/lessons/**").hasRole("TEACHER")
                 .requestMatchers(HttpMethod.PATCH, "/api/lessons/**").hasRole("TEACHER")
                 .requestMatchers(HttpMethod.DELETE, "/api/lessons/**").hasRole("TEACHER")
+                // sve ostalo pod /api/** mora biti autentifikovano
                 .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

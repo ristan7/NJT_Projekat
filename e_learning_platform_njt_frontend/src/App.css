@@ -390,3 +390,10 @@ body {
 .course-title {
   font-weight: 700;
 }
+
+.role-form select {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, .12);
+}

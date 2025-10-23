@@ -115,4 +115,23 @@ public class AuthService {
                 .map(userMapper::toDto)
                 .collect(Collectors.toList());
     }
+
+    /**
+     * ADMIN: Izmeni rolu korisniku direktno setovanjem FK (bez RoleRepository). NAPOMENA: Oslanjamo se na DB FK constraint da odbije nepostojeći role_id.
+     */
+    public void changeUserRole(Long userId, Long newRoleId, String actingUsername) throws Exception {
+        User target = users.findById(userId); // baca Exception ako ne postoji
+
+        // opciono: zabrani da admin sam sebi menja rolu
+        if (target.getUsername() != null && target.getUsername().equalsIgnoreCase(actingUsername)) {
+            throw new IllegalStateException("Admin cannot change their own role.");
+        }
+
+        // stub Role sa datim ID-jem (bez SELECT-a)
+        Role stub = new Role();
+        stub.setRoleId(newRoleId);
+        target.setRole(stub);
+
+        users.save(target); // upisuje novi role_id u FK kolonu
+    }
 }
