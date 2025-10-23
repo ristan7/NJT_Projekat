@@ -29,8 +29,8 @@ export default function Notifications() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // helper: da li je user admin
-  const isAdmin = (u) =>
-    (u?.role?.roleName || u?.role?.name || "").toUpperCase() === "ADMIN";
+  const isAdmin = (u) => (u?.roleId === 3) || ((u?.roleName ?? "").toUpperCase() === "ADMIN");
+
 
   // ------------------------------ Load ------------------------------
   useEffect(() => {
@@ -60,13 +60,14 @@ export default function Notifications() {
     const m = new Map();
     for (const t of types || []) {
       if (!t) continue;
-      const id = Number(t.id);
+      const id = Number(t.notificationTypeId ?? t.id);
       if (Number.isFinite(id)) {
-        m.set(id, t.notificationTypeName || t.name || "");
+        m.set(id, t.notificationTypeName ?? t.name ?? "");
       }
     }
     return m;
   }, [types]);
+
 
   const getTypeId = (n) =>
     n?.notificationTypeId ??
@@ -211,11 +212,12 @@ export default function Notifications() {
             >
               <option value="all">All types</option>
               {(types || []).map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.notificationTypeName || t.name}
+                <option key={t.notificationTypeId} value={String(t.notificationTypeId)}>
+                  {t.notificationTypeName}
                 </option>
               ))}
             </select>
+
 
             <select
               className="n-select"

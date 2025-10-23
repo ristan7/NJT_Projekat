@@ -108,4 +108,16 @@ public class UserRepository implements MyAppRepository<User, Long> {
         return list.isEmpty() ? null : list.get(0);
     }
 
+    public List<User> findAllByRoleId(Long roleId) {
+        return em.createQuery(
+                "SELECT u FROM User u WHERE u.role.roleId = :rid", User.class
+        ).setParameter("rid", roleId).getResultList();
+    }
+
+    public List<User> findAllByRoleName(String roleName) {
+        return em.createQuery(
+                "SELECT u FROM User u WHERE u.role.roleName = :rn", User.class
+        ).setParameter("rn", roleName).getResultList();
+    }
+
 }

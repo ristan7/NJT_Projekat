@@ -1,3 +1,4 @@
+// src/pages/AddNotification.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getMe, getUsers, getNotificationTypes } from "../api/api";
@@ -21,8 +22,7 @@ export default function AddNotification() {
     const [sending, setSending] = useState(false);
     const [errors, setErrors] = useState({});
 
-    const isAdmin = (u) =>
-        (u?.role?.roleName || u?.role?.name || "").toUpperCase() === "ADMIN";
+    const isAdmin = (u) => (u?.roleId === 3) || ((u?.roleName ?? "").toUpperCase() === "ADMIN");
 
     useEffect(() => {
         (async () => {
@@ -30,7 +30,7 @@ export default function AddNotification() {
                 const u = await getMe();
                 setMe(u);
 
-                // ako nije admin, nema pristup ovoj strani
+                // samo admin može na ovu stranu
                 if (!isAdmin(u)) {
                     nav("/notifications", { replace: true });
                     return;
@@ -52,7 +52,6 @@ export default function AddNotification() {
     const selectableUsers = useMemo(() => {
         const list = Array.isArray(allUsers) ? allUsers : [];
         if (!meId) return list;
-        // <— ključno: DTO vraća id (ne userId). Poredimo oba propertija radi robusnosti.
         return list.filter((u) => Number(u.id ?? u.userId) !== Number(meId));
     }, [allUsers, meId]);
 
@@ -77,14 +76,29 @@ export default function AddNotification() {
 
         setSending(true);
         try {
+            const uid = Number(userId);
+            const tid = Number(typeId);
+
+            // Šaljemo i “flat” i imena koja koristi tvoj bek (robusno);
+            // Jackson ignoriše nepoznata polja.
             const payload = {
-                notificationTitle: title,
+                // flat
+                title: title,
                 message: messageFront,
-                userId: Number(userId),
-                notificationTypeId: Number(typeId),
+                userId: uid,
+                typeId: tid,
+
+                // po tvojim nazivima u entitetima/DTO
+                notificationTitle: title,
+                notificationMessage: messageFront,
+                notificationTypeId: tid,
+
+                // ako bek očekuje objekte (u nekim verzijama)
+                user: { userId: uid },
+                notificationType: { notificationTypeId: tid },
             };
 
-            await http.post(`/notifications`, payload); // axios ima baseURL '/api' i JWT
+            await http.post(`/notifications`, payload); // baseURL = /api, JWT interceptor aktivan
             nav("/notifications");
         } catch (err) {
             console.error(err);
@@ -94,7 +108,6 @@ export default function AddNotification() {
         }
     }
 
-    // kratka 403 stranica dok loaduje/redirectuje
     if (loaded && me && !isAdmin(me)) {
         return (
             <div className="nf-wrap">
@@ -168,8 +181,11 @@ export default function AddNotification() {
                         >
                             <option value="">— Select type —</option>
                             {(types || []).map((t) => (
-                                <option key={t.id} value={t.id}>
-                                    {t.notificationTypeName || t.name}
+                                <option
+                                    key={t.notificationTypeId}
+                                    value={t.notificationTypeId}
+                                >
+                                    {t.notificationTypeName}
                                 </option>
                             ))}
                         </select>
@@ -178,7 +194,11 @@ export default function AddNotification() {
                 </div>
 
                 <div className="nf-actions">
-                    <button type="button" className="btn ghost" onClick={() => nav("/notifications")}>
+                    <button
+                        type="button"
+                        className="btn ghost"
+                        onClick={() => nav("/notifications")}
+                    >
                         Cancel
                     </button>
                     <button className="btn primary" disabled={sending}>
