@@ -42,7 +42,7 @@ export default function Navbar() {
       }
     })();
 
-    // 2) Badge iz LS/me
+    // 2) Badge (unread)
     (async () => {
       try {
         const u = getStoredUser() || me;
@@ -88,15 +88,12 @@ export default function Navbar() {
     navigate("/login");
   }
 
-
-
   // ------------------ UI HELPERS ------------------
   const displayName =
     [me?.firstName, me?.lastName].filter(Boolean).join(" ") ||
     me?.username ||
     "User";
 
-  // <= upravo ovo je nedostajalo
   const userLabel = displayName;
 
   const active = ({ isActive }) => ({
@@ -129,8 +126,12 @@ export default function Navbar() {
         {isLoggedIn && (
           <>
             <div className="nav-links">
-              <NavLink to="/" style={active}>
+              <NavLink to="/" style={active} end>
                 Home
+              </NavLink>
+              {/* NEW: Courses link */}
+              <NavLink to="/courses" style={active}>
+                Courses
               </NavLink>
               <NavLink to="/notifications" style={active}>
                 Notifications

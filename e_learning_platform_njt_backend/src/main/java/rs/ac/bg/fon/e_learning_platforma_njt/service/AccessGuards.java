@@ -51,4 +51,5 @@ public class AccessGuards
     public boolean hasPaid(Long userId, Long courseId) {
         return true;
     }
+    
 }

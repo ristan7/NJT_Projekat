@@ -12,6 +12,11 @@ import AddNotification from "./pages/AddNotification";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 
+// Courses pages
+import Courses from "./pages/Courses";
+import CourseDetails from "./pages/CourseDetails";
+import LessonView from "./pages/LessonView";
+
 import "./App.css";
 
 function Layout({ children }) {
@@ -41,6 +46,38 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Courses catalog */}
+          <Route
+            path="/courses"
+            element={
+              <ProtectedRoute>
+                <Courses />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Course details */}
+          <Route
+            path="/courses/:id"
+            element={
+              <ProtectedRoute>
+                <CourseDetails />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Lesson view */}
+          <Route
+            path="/lessons/:id"
+            element={
+              <ProtectedRoute>
+                <LessonView />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Notifications */}
           <Route
             path="/notifications"
             element={
@@ -58,7 +95,7 @@ export default function App() {
             }
           />
 
-          {/* Public auth routes (bez onSuccess — Login/Register interne rade navigate) */}
+          {/* Public auth routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 

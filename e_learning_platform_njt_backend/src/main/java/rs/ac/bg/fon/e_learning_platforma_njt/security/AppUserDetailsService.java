@@ -1,9 +1,8 @@
+// rs/ac/bg/fon/e_learning_platforma_njt/security/AppUserDetailsService.java
 package rs.ac.bg.fon.e_learning_platforma_njt.security;
 
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
 import rs.ac.bg.fon.e_learning_platforma_njt.entity.impl.User;
 import rs.ac.bg.fon.e_learning_platforma_njt.repository.impl.UserRepository;
@@ -21,21 +20,29 @@ public class AppUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User u = users.findByUsernameWithRole(username); // ⬅️ ovo je ključno
+        User u = users.findByUsernameWithRole(username);
         if (u == null) {
-            throw new UsernameNotFoundException("User not found");
+            throw new UsernameNotFoundException("User not found: " + username);
         }
 
-        String roleName = (u.getRole() != null && u.getRole().getRoleName() != null)
-                ? u.getRole().getRoleName()
-                : "STUDENT";
+        String raw = (u.getRole() != null && u.getRole().getRoleName() != null)
+                ? u.getRole().getRoleName() : "STUDENT";
 
-        var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + roleName));
-        return new org.springframework.security.core.userdetails.User(
-                u.getUsername(),
-                u.getPasswordHash(),
-                authorities
-        );
+        String norm = raw.trim().toUpperCase();
+        if (!norm.startsWith("ROLE_")) {
+            norm = "ROLE_" + norm;
+        }
+
+        var authorities = List.of(new SimpleGrantedAuthority(norm));
+
+        return org.springframework.security.core.userdetails.User
+                .withUsername(u.getUsername())
+                .password(u.getPasswordHash())
+                .authorities(authorities)
+                .accountExpired(false)
+                .accountLocked(false)
+                .credentialsExpired(false)
+                .disabled(false)
+                .build();
     }
-
 }

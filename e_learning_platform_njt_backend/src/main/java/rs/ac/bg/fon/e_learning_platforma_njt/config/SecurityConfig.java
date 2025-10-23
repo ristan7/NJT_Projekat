@@ -27,6 +27,7 @@ import rs.ac.bg.fon.e_learning_platforma_njt.security.JwtAuthFilter;
 
 import java.util.List;
 import java.util.Map;
+import org.springframework.core.annotation.Order;
 
 @Configuration
 @EnableWebSecurity
@@ -41,9 +42,13 @@ public class SecurityConfig {
         this.uds = uds;
     }
 
+    /* ====== API CHAIN (samo /api/**) ====== */
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    @Order(0)
+    SecurityFilterChain apiChain(HttpSecurity http) throws Exception {
         http
+                // veži ovaj lanac SAMO za /api/**
+                .securityMatcher("/api/**")
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -54,36 +59,34 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                 // preflight
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                // AUTH
+                // AUTH javno
                 .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/auth/me", "/api/auth/users").authenticated()
-                // Notifications
+                // LOOKUPS javno (bez ograničenja na metodu – bezbedno je)
+                .requestMatchers("/api/notification-types/**",
+                        "/api/course-levels/**",
+                        "/api/course-statuses/**",
+                        "/api/lesson-types/**",
+                        "/api/material-types/**").permitAll()
+                // NOTIFICATIONS
                 .requestMatchers(HttpMethod.GET, "/api/notifications/**").authenticated()
-                // mark single as read (/api/notifications/{id}/read)
                 .requestMatchers(HttpMethod.PATCH, "/api/notifications/*/read").authenticated()
-                // mark all as read (/api/notifications-read-all?userId=...)
-                .requestMatchers(HttpMethod.PATCH, "/api/notifications-read-all/**").authenticated()
-                // allow admin to create new notifications
+                .requestMatchers(HttpMethod.PATCH, "/api/notifications/read-all").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/notifications/**").hasRole("ADMIN")
-                // allow any authenticated user to delete their own notifications
                 .requestMatchers(HttpMethod.DELETE, "/api/notifications/**").authenticated()
-                // Courses
+                // COURSES
                 .requestMatchers(HttpMethod.GET, "/api/courses/**").hasAnyRole("STUDENT", "TEACHER", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/courses/**").hasRole("TEACHER")
                 .requestMatchers(HttpMethod.PUT, "/api/courses/**").hasRole("TEACHER")
                 .requestMatchers(HttpMethod.PATCH, "/api/courses/**").hasRole("TEACHER")
                 .requestMatchers(HttpMethod.DELETE, "/api/courses/**").hasRole("TEACHER")
-                // Lessons
-                .requestMatchers(HttpMethod.GET, "/api/lessons/**").hasAnyRole("STUDENT", "TEACHER", "ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/courses/{courseId}/lessons/**").hasRole("TEACHER")
+                // LESSONS
+                .requestMatchers(HttpMethod.GET, "/api/lessons/**", "/api/courses/*/lessons/**").hasAnyRole("STUDENT", "TEACHER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/courses/*/lessons/**").hasRole("TEACHER")
                 .requestMatchers(HttpMethod.PUT, "/api/lessons/**").hasRole("TEACHER")
                 .requestMatchers(HttpMethod.PATCH, "/api/lessons/**").hasRole("TEACHER")
                 .requestMatchers(HttpMethod.DELETE, "/api/lessons/**").hasRole("TEACHER")
-                // Materials
-                .requestMatchers(HttpMethod.GET, "/api/lessons/{lessonId}/materials/**").hasAnyRole("STUDENT", "TEACHER", "ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/lessons/{lessonId}/materials/**").hasRole("TEACHER")
-                .requestMatchers(HttpMethod.PUT, "/api/lessons/{lessonId}/materials/**").hasRole("TEACHER")
-                .requestMatchers(HttpMethod.DELETE, "/api/lessons/{lessonId}/materials/**").hasRole("TEACHER")
                 .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
@@ -92,12 +95,23 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /* ====== FALLBACK CHAIN (sve van /api/** je dozvoljeno) ====== */
+    @Bean
+    @Order(1)
+    SecurityFilterChain appChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/**")
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(a -> a.anyRequest().permitAll());
+        return http.build();
+    }
+
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        var provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(uds);
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
+        DaoAuthenticationProvider p = new DaoAuthenticationProvider();
+        p.setUserDetailsService(uds);
+        p.setPasswordEncoder(passwordEncoder());
+        return p;
     }
 
     @Bean
@@ -106,21 +120,20 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration c) throws Exception {
+        return c.getAuthenticationManager();
     }
 
     @Bean
     public AuthenticationEntryPoint authenticationEntryPoint() {
-        return (request, response, authException) -> {
+        return (request, response, ex) -> {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
-            Map<String, Object> body = Map.of(
+            new ObjectMapper().writeValue(response.getOutputStream(), Map.of(
                     "error", "Unauthorized",
                     "message", "You must be authenticated to access this resource",
                     "path", request.getRequestURI()
-            );
-            new ObjectMapper().writeValue(response.getOutputStream(), body);
+            ));
         };
     }
 
@@ -129,25 +142,23 @@ public class SecurityConfig {
         return (request, response, ex) -> {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");
-            Map<String, Object> body = Map.of(
+            new ObjectMapper().writeValue(response.getOutputStream(), Map.of(
                     "error", "Forbidden",
                     "message", ex.getMessage() != null ? ex.getMessage() : "Access is denied",
                     "path", request.getRequestURI()
-            );
-            new ObjectMapper().writeValue(response.getOutputStream(), body);
+            ));
         };
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        var c = new CorsConfiguration();
+        CorsConfiguration c = new CorsConfiguration();
         c.setAllowedOrigins(List.of("http://localhost:3000"));
         c.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         c.setAllowedHeaders(List.of("*"));
         c.setExposedHeaders(List.of("Authorization"));
         c.setAllowCredentials(true);
-
-        var s = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource s = new UrlBasedCorsConfigurationSource();
         s.registerCorsConfiguration("/**", c);
         return s;
     }

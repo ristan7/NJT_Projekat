@@ -114,4 +114,5 @@ public class CourseRepository implements MyAppRepository<Course, Long> {
                 .setParameter("q", q != null ? q.trim() : "")
                 .getResultList();
     }
+    
 }

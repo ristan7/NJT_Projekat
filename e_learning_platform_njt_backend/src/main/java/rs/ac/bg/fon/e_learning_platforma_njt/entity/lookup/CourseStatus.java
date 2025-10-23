@@ -1,9 +1,11 @@
 package rs.ac.bg.fon.e_learning_platforma_njt.entity.lookup;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.util.Objects;
 import rs.ac.bg.fon.e_learning_platforma_njt.entity.MyEntity;
 
+@JsonIgnoreProperties({"courses"})
 @Entity
 @Table(name = "course_status")
 public class CourseStatus implements MyEntity {
@@ -48,24 +50,16 @@ public class CourseStatus implements MyEntity {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
+        if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final CourseStatus other = (CourseStatus) obj;
-        if (!Objects.equals(this.courseStatusName, other.courseStatusName)) {
-            return false;
-        }
-        return Objects.equals(this.courseStatusId, other.courseStatusId);
+        CourseStatus other = (CourseStatus) obj;
+        return Objects.equals(courseStatusId, other.courseStatusId)
+                && Objects.equals(courseStatusName, other.courseStatusName);
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("CourseStatus: ").append(courseStatusName);
-        return sb.toString();
+        return "CourseStatus: " + courseStatusName;
     }
-
 }

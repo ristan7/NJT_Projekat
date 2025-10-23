@@ -1,0 +1,156 @@
+/* src/css/lessonView.css */
+.lesson-wrap {
+    padding: 16px 0 48px;
+}
+
+.lesson-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.breadcrumbs a {
+    color: inherit;
+    opacity: .9;
+    text-decoration: none;
+}
+
+.breadcrumbs a:hover {
+    text-decoration: underline;
+}
+
+.lesson-title {
+    margin: 6px 0 0;
+    font-size: 28px;
+}
+
+.badge.preview {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(255, 214, 102, 0.15);
+    border: 1px solid rgba(255, 214, 102, 0.4);
+}
+
+.lesson-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn {
+    height: 34px;
+    padding: 0 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: inherit;
+    cursor: pointer;
+}
+
+.btn.primary {
+    background: var(--olive, #6b8a3a);
+    border: none;
+}
+
+.btn.ghost {
+    background: transparent;
+}
+
+.muted {
+    opacity: .75;
+}
+
+.sec-title {
+    margin: 18px 0 10px;
+}
+
+/* Materials list */
+.mat-list {
+    display: grid;
+    gap: 10px;
+    padding: 0;
+    list-style: none;
+}
+
+.mat-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--surface, #111711);
+    box-shadow: var(--shadow, 0 10px 30px rgba(0, 0, 0, .35));
+}
+
+.mat-left {
+    display: grid;
+    grid-template-columns: 38px 1fr;
+    gap: 10px;
+    align-items: center;
+}
+
+.mat-ic {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mat-title {
+    font-weight: 600;
+}
+
+/* Locked state */
+.locked {
+    text-align: center;
+    padding: 36px 0 40px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.lock-emoji {
+    font-size: 42px;
+    margin-bottom: 8px;
+}
+
+.lock-title {
+    font-size: 18px;
+    margin-bottom: 6px;
+}
+
+.empty {
+    text-align: center;
+    padding: 36px 0;
+}
+
+/* Skeleton */
+.lv-skeleton .s1,
+.lv-skeleton .s2,
+.lv-skeleton .s3 {
+    height: 80px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
+    background-size: 200% 100%;
+    animation: shimmer 1.2s infinite;
+    margin-bottom: 10px;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
