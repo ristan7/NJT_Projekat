@@ -1,4 +1,3 @@
-// src/main/java/.../dto/impl/RegisterRequest.java
 package rs.ac.bg.fon.e_learning_platforma_njt.dto.impl;
 
 import jakarta.validation.constraints.Email;
@@ -6,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 /**
- * DTO za registraciju korisnika.
+ * DTO za registraciju. Role se NE prosleđuje; backend dodeljuje STUDENT.
  */
 public class RegisterRequest {
 
@@ -32,7 +31,6 @@ public class RegisterRequest {
     public RegisterRequest() {
     }
 
-    // Getteri i setteri
     public String getUsername() {
         return username;
     }

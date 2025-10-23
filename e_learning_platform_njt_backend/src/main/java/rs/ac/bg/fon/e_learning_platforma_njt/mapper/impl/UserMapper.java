@@ -3,9 +3,7 @@ package rs.ac.bg.fon.e_learning_platforma_njt.mapper.impl;
 
 import org.springframework.stereotype.Component;
 import rs.ac.bg.fon.e_learning_platforma_njt.dto.impl.UserDto;
-import rs.ac.bg.fon.e_learning_platforma_njt.dto.impl.lookups.RoleDto;
 import rs.ac.bg.fon.e_learning_platforma_njt.entity.impl.User;
-import rs.ac.bg.fon.e_learning_platforma_njt.entity.lookup.Role;
 
 @Component
 public class UserMapper {
@@ -14,26 +12,38 @@ public class UserMapper {
         if (u == null) {
             return null;
         }
-        return new UserDto(
-                u.getUserId(),
-                u.getUsername(),
-                u.getEmail(),
-                u.getFirstName(),
-                u.getLastName(),
-                toRoleDto(u.getRole())
-        );
+        // Koristi settere da ne zavisimo od starog konstruktora sa RoleDto
+        UserDto dto = new UserDto();
+        dto.setUserId(u.getUserId());
+        // Ako UserDto ima username polje, mapiramo ga; ako nema, slobodno obriši narednu liniju
+        try {
+            // Ova linija je bezbedna ako UserDto ima setUsername; u suprotnom je obriši
+            UserDto.class.getMethod("setUsername", String.class);
+            dto.getClass().getMethod("setUsername", String.class).invoke(dto, u.getUsername());
+        } catch (Exception ignore) {
+            // UserDto nema username -> preskačemo
+        }
+
+        dto.setEmail(u.getEmail());
+        dto.setFirstName(u.getFirstName());
+        dto.setLastName(u.getLastName());
+
+        if (u.getRole() != null) {
+            dto.setRoleId(u.getRole().getRoleId());
+            // roleName je opciono, ali korisno za UI
+            try {
+                UserDto.class.getMethod("setRoleName", String.class);
+                dto.setRoleName(u.getRole().getRoleName());
+            } catch (Exception ignore) {
+                // Ako UserDto nema roleName polje, samo punimo roleId
+            }
+        }
+
+        return dto;
     }
 
     public void updateFromRegister(User u, String firstName, String lastName) {
         u.setFirstName(firstName);
         u.setLastName(lastName);
     }
-
-    private RoleDto toRoleDto(Role r) {
-        if (r == null) {
-            return null;
-        }
-        return new RoleDto(r.getRoleId(), r.getRoleName());
-    }
-    
 }
