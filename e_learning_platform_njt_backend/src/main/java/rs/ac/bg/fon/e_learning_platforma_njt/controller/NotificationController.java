@@ -118,7 +118,7 @@ public class NotificationController {
     }
 
     // ---------- READ STATE ----------
-    @PostMapping("/{id}/read")
+    @PatchMapping("/{id}/read")
     public ResponseEntity<Void> markRead(@PathVariable Long id) {
         try {
             service.markRead(id);
@@ -128,7 +128,7 @@ public class NotificationController {
         }
     }
 
-    @PostMapping("/read-all")
+    @PatchMapping("/read-all")
     public ResponseEntity<Integer> markAllRead() {
         try {
             int updated = service.markAllRead(null);

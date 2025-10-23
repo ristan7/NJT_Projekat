@@ -1,7 +1,6 @@
-// src/pages/Login.jsx
 import React, { useState } from "react";
-import http from "../api/http";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { login, saveAuth } from "../api/api";
 import "../css/auth.css";
 
 export default function Login() {
@@ -18,22 +17,17 @@ export default function Login() {
         setLoading(true);
 
         try {
-            const res = await http.post("/auth/login", {
-                username: form.username.trim(),
-                password: form.password,
-            });
-
-            const { token, user } = res.data || {};
-            if (!token) throw new Error("Token missing in response");
-
-            localStorage.setItem("token", token);
-            if (user) localStorage.setItem("user", JSON.stringify(user));
-
+            const data = await login(form.username.trim(), form.password);
+            if (!data?.token) throw new Error("Token missing in response");
+            saveAuth(data);
             setOk("Welcome back!");
-            // ⬇️ ključno: replace da ne ostane /login u istoriji
             navigate("/", { replace: true });
         } catch (e2) {
-            const msg = e2?.response?.data?.message || e2?.message || "Login failed. Please try again.";
+            const msg =
+                e2?.response?.data?.message ||
+                e2?.response?.data?.error ||
+                e2?.message ||
+                "Login failed. Please try again.";
             setErr(msg);
         } finally {
             setLoading(false);
@@ -54,9 +48,10 @@ export default function Login() {
                         <label>Username</label>
                         <input
                             type="text"
-                            autoComplete="username"
                             value={form.username}
                             onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
+                            placeholder="marko123"
+                            autoComplete="username"
                             required
                         />
                     </div>
@@ -65,11 +60,12 @@ export default function Login() {
                         <label>Password</label>
                         <input
                             type="password"
-                            autoComplete="current-password"
                             value={form.password}
                             onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                            required
+                            placeholder="••••••••"
+                            autoComplete="current-password"
                             minLength={6}
+                            required
                         />
                     </div>
 
@@ -80,7 +76,7 @@ export default function Login() {
 
                 <div className="auth-footer">
                     <span className="muted">Don’t have an account? </span>
-                    <a href="/register">Create one</a>
+                    <Link to="/register">Create one</Link>
                 </div>
             </div>
         </div>

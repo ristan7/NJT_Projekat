@@ -1,51 +1,98 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package rs.ac.bg.fon.e_learning_platforma_njt.entity.impl;
 
-import java.io.Serializable;
-import rs.ac.bg.fon.e_learning_platforma_njt.entity.MyEntity;
 import jakarta.persistence.*;
-import java.util.List;
-import java.util.Objects;
+import jakarta.validation.constraints.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.*;
+import rs.ac.bg.fon.e_learning_platforma_njt.entity.MyEntity;
 import rs.ac.bg.fon.e_learning_platforma_njt.entity.lookup.CourseLevel;
 import rs.ac.bg.fon.e_learning_platforma_njt.entity.lookup.CourseStatus;
 
-/**
- *
- * @author mikir
- */
 @Entity
-@Table(name = "course")
-public class Course implements Serializable, MyEntity {
+@Table(name = "course",
+        indexes = {
+            @Index(name = "ix_course_author", columnList = "author_id"),
+            @Index(name = "ix_course_status", columnList = "course_status_id"),
+            @Index(name = "ix_course_level", columnList = "course_level_id")
+        })
+public class Course implements MyEntity {
 
+    /* ===================== Polja ===================== */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "course_id")
     private Long courseId;
 
-    @Column(name = "course_title", nullable = false, length = 100)
+    @NotBlank(message = "Course title is required.")
+    @Size(max = 150, message = "Course title can be at most 150 characters.")
+    @Column(name = "course_title", nullable = false, length = 150)
     private String courseTitle;
 
-    @Column(name = "course_description", columnDefinition = "TEXT")
+    @NotBlank(message = "Course description is required.")
+    @Column(name = "course_description", columnDefinition = "TEXT", nullable = false)
     private String courseDescription;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "course_status_id", nullable = false)
-    private CourseStatus status;
+    @Digits(integer = 8, fraction = 2)
+    @PositiveOrZero(message = "Course price must be non-negative.")
+    @Column(name = "course_price", precision = 10, scale = 2, nullable = false)
+    private BigDecimal coursePrice = BigDecimal.ZERO;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "course_level_id", nullable = false)
-    private CourseLevel level;
+    /* ====== DATUMI ====== */
+    @PastOrPresent
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "author_id", nullable = false)
+    @PastOrPresent
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @Column(name = "published_at")
+    private LocalDateTime publishedAt;
+
+    /* ====== RELACIJE ====== */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "author_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_course_author"))
     private User author;
 
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Lesson> lessons;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "course_level_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_course_level"))
+    private CourseLevel courseLevel;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "course_status_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_course_status"))
+    private CourseStatus courseStatus;
+
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("lessonOrderIndex ASC")
+    private List<Lesson> lessons = new ArrayList<>();
+
+    /* ====== Lifecycle hook-ovi za datume ====== */
+    @PrePersist
+    protected void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void setCourseStatus(CourseStatus courseStatus) {
+        boolean publishing = courseStatus != null
+                && "PUBLISHED".equalsIgnoreCase(courseStatus.getCourseStatusName());
+        if (publishing && this.publishedAt == null) {
+            this.publishedAt = LocalDateTime.now();
+        }
+        this.courseStatus = courseStatus;
+    }
+
+    /* ====== Konstruktori ====== */
     public Course() {
     }
 
@@ -53,26 +100,7 @@ public class Course implements Serializable, MyEntity {
         this.courseId = courseId;
     }
 
-    public Course(Long courseId, String courseTitle, String courseDescription, CourseStatus status, CourseLevel level, User author, List<Lesson> lessons) {
-        this.courseId = courseId;
-        this.courseTitle = courseTitle;
-        this.courseDescription = courseDescription;
-        this.status = status;
-        this.level = level;
-        this.author = author;
-        this.lessons = lessons;
-    }
-
-    public Course(String courseTitle, String courseDescription, CourseStatus status, CourseLevel level, User author, List<Lesson> lessons) {
-        this.courseTitle = courseTitle;
-        this.courseDescription = courseDescription;
-        this.status = status;
-        this.level = level;
-        this.author = author;
-        this.lessons = lessons;
-    }
-
-    // getters/setters
+    /* ====== Getteri i Setteri ====== */
     public Long getCourseId() {
         return courseId;
     }
@@ -97,20 +125,24 @@ public class Course implements Serializable, MyEntity {
         this.courseDescription = courseDescription;
     }
 
-    public CourseStatus getStatus() {
-        return status;
+    public BigDecimal getCoursePrice() {
+        return coursePrice;
     }
 
-    public void setStatus(CourseStatus status) {
-        this.status = status;
+    public void setCoursePrice(BigDecimal coursePrice) {
+        this.coursePrice = coursePrice;
     }
 
-    public CourseLevel getLevel() {
-        return level;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void setLevel(CourseLevel level) {
-        this.level = level;
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public LocalDateTime getPublishedAt() {
+        return publishedAt;
     }
 
     public User getAuthor() {
@@ -121,6 +153,18 @@ public class Course implements Serializable, MyEntity {
         this.author = author;
     }
 
+    public CourseLevel getCourseLevel() {
+        return courseLevel;
+    }
+
+    public void setCourseLevel(CourseLevel courseLevel) {
+        this.courseLevel = courseLevel;
+    }
+
+    public CourseStatus getCourseStatus() {
+        return courseStatus;
+    }
+
     public List<Lesson> getLessons() {
         return lessons;
     }
@@ -129,34 +173,48 @@ public class Course implements Serializable, MyEntity {
         this.lessons = lessons;
     }
 
+    public void addLesson(Lesson l) {
+        if (l == null) {
+            return;
+        }
+        lessons.add(l);
+        l.setCourse(this);
+    }
+
+    public void removeLesson(Lesson l) {
+        if (l == null) {
+            return;
+        }
+        lessons.remove(l);
+        l.setCourse(null);
+    }
+
+    /* ====== equals, hashCode, toString ====== */
     @Override
-    public int hashCode() {
-        int hash = 3;
-        return hash;
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Course)) {
+            return false;
+        }
+        Course other = (Course) o;
+        return Objects.equals(courseId, other.courseId);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final Course other = (Course) obj;
-        return Objects.equals(this.courseId, other.courseId);
+    public int hashCode() {
+        return Objects.hash(courseId);
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Course: ")
-                .append(courseTitle != null ? courseTitle : "")
-                .append(" (ID: ").append(courseId).append(")");
-        return sb.toString();
+        return "Course{"
+                + "courseId=" + courseId
+                + ", courseTitle='" + courseTitle + '\''
+                + ", coursePrice=" + coursePrice
+                + ", courseStatus=" + (courseStatus != null ? courseStatus.getCourseStatusName() : "null")
+                + ", courseLevel=" + (courseLevel != null ? courseLevel.getCourseLevelName() : "null")
+                + '}';
     }
-
 }
