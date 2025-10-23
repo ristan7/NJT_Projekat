@@ -33,13 +33,22 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res, FilterChain chain)
             throws ServletException, IOException {
 
+        String p = req.getServletPath();
+
+        // ✔️ Bez JWT samo login i register
+        if (p.equals("/api/auth/login") || p.equals("/api/auth/register")) {
+            chain.doFilter(req, res);
+            return;
+        }
+
         String header = req.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
-            String username = jwt.extractUsername(token); // mora da radi bez exception-a
 
+            String username = jwt.extractUsername(token); // ili claim koji koristiš
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails ud = uds.loadUserByUsername(username);
+
                 if (jwt.isValid(token, ud)) {
                     UsernamePasswordAuthenticationToken auth
                             = new UsernamePasswordAuthenticationToken(ud, null, ud.getAuthorities());
@@ -48,7 +57,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 }
             }
         }
+
         chain.doFilter(req, res);
     }
-    
+
 }

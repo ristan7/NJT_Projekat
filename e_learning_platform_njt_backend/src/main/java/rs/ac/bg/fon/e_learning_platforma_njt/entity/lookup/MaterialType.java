@@ -19,6 +19,10 @@ public class MaterialType implements MyEntity {
     public MaterialType() {
     }
 
+    public MaterialType(Long materialTypeId) {
+        this.materialTypeId = materialTypeId;
+    }
+
     public MaterialType(String materialTypeName) {
         this.materialTypeName = materialTypeName;
     }

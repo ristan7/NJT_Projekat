@@ -59,7 +59,7 @@ public class User implements MyEntity {
     )
     private Role role;
 
-    // ===================== NEW: dvosmerna veza ka Notification =====================
+    /* ======= NOTIFICATIONS (postojeće) ======= */
     @OneToMany(
             mappedBy = "user",
             cascade = CascadeType.ALL,
@@ -69,7 +69,17 @@ public class User implements MyEntity {
     @OrderBy("sentAt DESC")
     private List<Notification> notifications = new ArrayList<>();
 
-    // ===================== konstruktori =====================
+    /* ======= NEW: kursevi čiji je autor ovaj korisnik ======= */
+    @OneToMany(
+            mappedBy = "author", // u Course: @ManyToOne User author
+            cascade = CascadeType.ALL, // brisanje user-a briše i njegove kurseve
+            orphanRemoval = true, // uklanjanje iz liste briše red u course
+            fetch = FetchType.LAZY
+    )
+    @OrderBy("createdAt DESC")
+    private List<Course> authoredCourses = new ArrayList<>();
+
+    /* ======= konstruktori ======= */
     public User() {
     }
 
@@ -77,7 +87,7 @@ public class User implements MyEntity {
         this.userId = userId;
     }
 
-    // ===================== helper metode za održavanje veze =====================
+    /* ======= helper metode (Notifications) ======= */
     public void addNotification(Notification n) {
         if (n == null) {
             return;
@@ -94,7 +104,24 @@ public class User implements MyEntity {
         n.setUser(null);
     }
 
-    // ===================== get/set =====================
+    /* ======= helper metode (Courses) ======= */
+    public void addAuthoredCourse(Course c) {
+        if (c == null) {
+            return;
+        }
+        authoredCourses.add(c);
+        c.setAuthor(this);
+    }
+
+    public void removeAuthoredCourse(Course c) {
+        if (c == null) {
+            return;
+        }
+        authoredCourses.remove(c);
+        c.setAuthor(null);
+    }
+
+    /* ======= get/set ======= */
     public Long getUserId() {
         return userId;
     }
@@ -156,7 +183,6 @@ public class User implements MyEntity {
     }
 
     public void setNotifications(List<Notification> notifications) {
-        // održavanje konzistentnosti obe strane veze
         this.notifications.clear();
         if (notifications != null) {
             for (Notification n : notifications) {
@@ -165,7 +191,20 @@ public class User implements MyEntity {
         }
     }
 
-    // ===================== equals/hashCode/toString =====================
+    public List<Course> getAuthoredCourses() {
+        return authoredCourses;
+    }
+
+    public void setAuthoredCourses(List<Course> courses) {
+        this.authoredCourses.clear();
+        if (courses != null) {
+            for (Course c : courses) {
+                addAuthoredCourse(c);
+            }
+        }
+    }
+
+    /* ======= equals/hashCode/toString ======= */
     @Override
     public boolean equals(Object o) {
         if (this == o) {

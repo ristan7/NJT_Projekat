@@ -19,6 +19,10 @@ public class CourseLevel implements MyEntity {
     public CourseLevel() {
     }
 
+    public CourseLevel(Long courseLevelId) {
+        this.courseLevelId = courseLevelId;
+    }
+
     public CourseLevel(String courseLevelName) {
         this.courseLevelName = courseLevelName;
     }

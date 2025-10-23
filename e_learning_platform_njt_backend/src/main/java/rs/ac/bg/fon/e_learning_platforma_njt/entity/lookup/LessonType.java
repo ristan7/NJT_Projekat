@@ -19,6 +19,10 @@ public class LessonType implements MyEntity {
     public LessonType() {
     }
 
+    public LessonType(Long lessonTypeId) {
+        this.lessonTypeId = lessonTypeId;
+    }
+
     public LessonType(String lessonTypeName) {
         this.lessonTypeName = lessonTypeName;
     }

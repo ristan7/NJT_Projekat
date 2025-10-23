@@ -14,7 +14,7 @@ import rs.ac.bg.fon.e_learning_platforma_njt.entity.MyEntity;
  */
 @Entity
 @Table(name = "role")
-public class Role {
+public class Role implements MyEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

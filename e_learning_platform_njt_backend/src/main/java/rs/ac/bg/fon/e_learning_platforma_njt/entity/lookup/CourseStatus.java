@@ -19,6 +19,10 @@ public class CourseStatus implements MyEntity {
     public CourseStatus() {
     }
 
+    public CourseStatus(Long courseStatusId) {
+        this.courseStatusId = courseStatusId;
+    }
+
     public CourseStatus(String courseStatusName) {
         this.courseStatusName = courseStatusName;
     }
