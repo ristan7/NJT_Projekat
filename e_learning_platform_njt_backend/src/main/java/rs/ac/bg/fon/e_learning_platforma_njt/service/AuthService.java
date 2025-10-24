@@ -86,7 +86,15 @@ public class AuthService {
                 ? me.getRole().getRoleName()
                 : "STUDENT";
 
-        String token = jwt.generate(springUser, Map.of("role", roleName));
+        // ⬇️ KLJUČNA IZMJENA: ubacujemo i userId u JWT claim-ove
+        String token = jwt.generate(
+                springUser,
+                Map.of(
+                        "userId", me.getUserId(),
+                        "role", roleName
+                )
+        );
+
         return new AuthResponse(token, userMapper.toDto(me));
     }
 

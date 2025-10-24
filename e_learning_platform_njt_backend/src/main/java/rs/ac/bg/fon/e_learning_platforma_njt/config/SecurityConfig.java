@@ -47,7 +47,6 @@ public class SecurityConfig {
     @Order(0)
     SecurityFilterChain apiChain(HttpSecurity http) throws Exception {
         http
-                // veži ovaj lanac SAMO za /api/**
                 .securityMatcher("/api/**")
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -64,14 +63,17 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
                 // /me i /users zahtevaju login
                 .requestMatchers(HttpMethod.GET, "/api/auth/me", "/api/auth/users").authenticated()
-                // ⬇️ NOVO: ADMIN može da menja rolu korisniku (PATCH /api/auth/admin/users/{id})
+                // ADMIN može da menja rolu
                 .requestMatchers(HttpMethod.PATCH, "/api/auth/admin/users/*").hasRole("ADMIN")
-                // LOOKUPS javno (bez ograničenja na metodu – bezbedno je)
-                .requestMatchers("/api/notification-types/**",
+                // LOOKUPS javno (+ dodat enrollment-statuses)
+                .requestMatchers(
+                        "/api/notification-types/**",
                         "/api/course-levels/**",
                         "/api/course-statuses/**",
                         "/api/lesson-types/**",
-                        "/api/material-types/**").permitAll()
+                        "/api/material-types/**",
+                        "/api/enrollment-statuses/**"
+                ).permitAll()
                 // NOTIFICATIONS
                 .requestMatchers(HttpMethod.GET, "/api/notifications/**").authenticated()
                 .requestMatchers(HttpMethod.PATCH, "/api/notifications/*/read").authenticated()
@@ -84,12 +86,34 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/courses/**").hasRole("TEACHER")
                 .requestMatchers(HttpMethod.PATCH, "/api/courses/**").hasRole("TEACHER")
                 .requestMatchers(HttpMethod.DELETE, "/api/courses/**").hasRole("TEACHER")
-                // LESSONS
-                .requestMatchers(HttpMethod.GET, "/api/lessons/**", "/api/courses/*/lessons/**").hasAnyRole("STUDENT", "TEACHER", "ADMIN")
+                // LESSONS (READ za student/teacher/admin; write samo teacher)
+                .requestMatchers(HttpMethod.GET, "/api/lessons/**", "/api/courses/*/lessons/**")
+                .hasAnyRole("STUDENT", "TEACHER", "ADMIN")
                 .requestMatchers(HttpMethod.POST, "/api/courses/*/lessons/**").hasRole("TEACHER")
                 .requestMatchers(HttpMethod.PUT, "/api/lessons/**").hasRole("TEACHER")
                 .requestMatchers(HttpMethod.PATCH, "/api/lessons/**").hasRole("TEACHER")
                 .requestMatchers(HttpMethod.DELETE, "/api/lessons/**").hasRole("TEACHER")
+                // ENROLLMENTS (usklađeno sa EnrollmentController + EnrollmentService)
+                // detalj po id-u -> student/teacher/admin
+                .requestMatchers(HttpMethod.GET, "/api/enrollments/*")
+                .hasAnyRole("STUDENT", "TEACHER", "ADMIN")
+                // liste:
+                .requestMatchers(HttpMethod.GET, "/api/students/*/enrollments")
+                .hasAnyRole("STUDENT", "ADMIN") // self enforce radi servis
+                .requestMatchers(HttpMethod.GET, "/api/teachers/*/enrollments")
+                .hasAnyRole("TEACHER", "ADMIN") // servis proverava „samo svoje“
+                .requestMatchers(HttpMethod.GET, "/api/courses/*/enrollments")
+                .hasAnyRole("TEACHER", "ADMIN") // servis proverava vlasništvo kursa
+                // create request (student samog sebe)
+                .requestMatchers(HttpMethod.POST, "/api/courses/*/enrollments")
+                .hasRole("STUDENT")
+                // status akcije:
+                .requestMatchers(HttpMethod.POST, "/api/enrollments/*/activate")
+                .hasAnyRole("TEACHER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/enrollments/*/complete")
+                .hasAnyRole("TEACHER", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/enrollments/*/cancel")
+                .hasAnyRole("STUDENT", "TEACHER", "ADMIN")
                 // sve ostalo pod /api/** mora biti autentifikovano
                 .anyRequest().authenticated()
                 )

@@ -1,10 +1,10 @@
-// src/pages/Courses.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
     getCourses,
     getCourseLevels,
     getCourseStatuses,
+    getLessonsCount, // broj lekcija po kursu
 } from "../api/courses";
 import "../css/Courses.css";
 
@@ -35,22 +35,23 @@ const cleanParams = (obj = {}) => {
 
 export default function Courses() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const syncingRef = useRef(false); // spreči loop pri dvosmernoj sinhr.
+    const syncingRef = useRef(false);
 
-    // ------------- INIT STATE iz URL-a -------------
+    // init iz URL-a
     const [q, setQ] = useState(() => searchParams.get("q") || "");
     const [level, setLevel] = useState(() => searchParams.get("level") || "");
-    const [status, setStatus] = useState(() => searchParams.get("status") || "");
+    const [status, setStatus] = useState(() => searchParams.get("status") || "PUBLISHED");
     const [category, setCategory] = useState(() => searchParams.get("category") || "");
     const [sort, setSort] = useState(() => searchParams.get("sort") || "date_desc");
     const [page, setPage] = useState(() => toNum(searchParams.get("page"), 0));
     const [size, setSize] = useState(() => toNum(searchParams.get("size"), 12));
 
-    // Data
+    // data
     const [rows, setRows] = useState([]);
     const [total, setTotal] = useState(0);
+    const [lessonCounts, setLessonCounts] = useState({}); // { [courseId]: number }
 
-    // Lookups
+    // lookups
     const [levels, setLevels] = useState([]);
     const [statuses, setStatuses] = useState([]);
 
@@ -58,9 +59,9 @@ export default function Courses() {
     const [loading, setLoading] = useState(true);
     const [err, setErr] = useState("");
 
-    // ------------- Reakcija na PROMENU URL-a (Back/Forward) -------------
+    // reakcija na promenu URL-a
     useEffect(() => {
-        if (syncingRef.current) return; // ignoriši kad sami upišemo URL
+        if (syncingRef.current) return;
         setQ(searchParams.get("q") || "");
         setLevel(searchParams.get("level") || "");
         setStatus(searchParams.get("status") || "");
@@ -71,7 +72,7 @@ export default function Courses() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);
 
-    // ------------- Upis u URL kad state prom. -------------
+    // upis u URL
     useEffect(() => {
         const next = cleanParams({ q, level, status, category, sort, page, size });
         const current = Object.fromEntries(searchParams.entries());
@@ -82,13 +83,12 @@ export default function Courses() {
         if (changed) {
             syncingRef.current = true;
             setSearchParams(next, { replace: true });
-            // nakon sledećeg tick-a dozvoli reakcije na URL promene
             setTimeout(() => (syncingRef.current = false), 0);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [q, level, status, category, sort, page, size]);
 
-    // Load lookups once
+    // lookups
     useEffect(() => {
         (async () => {
             try {
@@ -102,7 +102,7 @@ export default function Courses() {
         })();
     }, []);
 
-    // Load courses whenever filters/sort/page change
+    // učitaj kurseve + counts
     useEffect(() => {
         let alive = true;
         (async () => {
@@ -119,8 +119,24 @@ export default function Courses() {
                     size,
                 });
                 if (!alive) return;
-                setRows(Array.isArray(rows) ? rows : []);
+                const list = Array.isArray(rows) ? rows : [];
+                setRows(list);
                 setTotal(Number.isFinite(total) ? total : 0);
+
+                // counts
+                const pairs = await Promise.all(
+                    list.map(async (c) => {
+                        const id = c?.courseId ?? c?.id;
+                        if (!id) return [null, 0];
+                        try {
+                            const n = await getLessonsCount(id);
+                            return [String(id), Number(n) || 0];
+                        } catch {
+                            return [String(id), Array.isArray(c?.lessons) ? c.lessons.length : (c?.lessonCount ?? 0)];
+                        }
+                    })
+                );
+                if (alive) setLessonCounts(Object.fromEntries(pairs.filter(([k]) => k != null)));
             } catch (e) {
                 if (!alive) return;
                 const s = e?.response?.status;
@@ -129,10 +145,11 @@ export default function Courses() {
                         ? "Sesija je istekla. Prijavi se ponovo."
                         : s === 403
                             ? "Nemaš dozvolu za ovaj sadržaj."
-                            : (e?.response?.data?.message || e?.message || "Failed to load courses.")
+                            : e?.response?.data?.message || e?.message || "Failed to load courses."
                 );
                 setRows([]);
                 setTotal(0);
+                setLessonCounts({});
             } finally {
                 if (alive) setLoading(false);
             }
@@ -142,39 +159,29 @@ export default function Courses() {
         };
     }, [q, level, status, category, sort, page, size]);
 
-    // Reset page na 0 kad se filteri/sort/size promene (ali ne kada samo page menjaš)
+    // resetuj page pri promeni filtera/sorta
     useEffect(() => {
         setPage(0);
     }, [q, level, status, category, sort, size]);
 
-    // Helpers
-    const totalPages = useMemo(
-        () => Math.max(1, Math.ceil((total || 0) / (size || 1))),
-        [total, size]
-    );
-
     const levelName = (val) => {
         if (!val) return "";
         if (typeof val === "string") return val;
-        return val?.name || val?.levelName || val?.title || String(val);
+        return val?.levelName || val?.courseLevelName || val?.name || val?.title || String(val);
     };
-
     const statusName = (val) => {
         if (!val) return "";
         if (typeof val === "string") return val;
-        return val?.name || val?.statusName || val?.title || String(val);
+        return val?.statusName || val?.courseStatusName || val?.name || val?.title || String(val);
     };
 
     const lessonCount = (course) => {
-        const lessons = course?.lessons;
-        if (Array.isArray(lessons)) return lessons.length;
-        const n = Number(course?.lessonCount ?? course?.lessonsCount);
-        return Number.isFinite(n) ? n : undefined;
+        const id = course?.courseId ?? course?.id;
+        const n = lessonCounts[String(id)];
+        return Number.isFinite(n) ? n : 0;
     };
 
-    const goTo = (id) => {
-        window.location.href = `/courses/${id}`;
-    };
+    const goTo = (id) => (window.location.href = `/courses/${id}`);
 
     return (
         <div className="courses-wrap">
@@ -192,45 +199,27 @@ export default function Courses() {
                         onChange={(e) => setQ(e.target.value)}
                     />
 
-                    <select
-                        className="input"
-                        value={level}
-                        onChange={(e) => setLevel(e.target.value)}
-                        title="Level"
-                    >
+                    <select className="input" value={level} onChange={(e) => setLevel(e.target.value)} title="Level">
                         <option value="">All levels</option>
                         {(levels || []).map((x, i) => {
-                            const id =
-                                x?.id ??
-                                x?.levelId ??
-                                x?.courseLevelId ??
-                                levelName(x) ??
-                                i;
+                            const id = x?.courseLevelId ?? x?.levelId ?? x?.id ?? i;
+                            const label = x?.courseLevelName ?? x?.levelName ?? x?.name ?? `Level ${id}`;
                             return (
-                                <option key={id} value={x?.code ?? x?.id ?? levelName(x)}>
-                                    {levelName(x)}
+                                <option key={id} value={id}>
+                                    {label}
                                 </option>
                             );
                         })}
                     </select>
 
-                    <select
-                        className="input"
-                        value={status}
-                        onChange={(e) => setStatus(e.target.value)}
-                        title="Status"
-                    >
+                    <select className="input" value={status} onChange={(e) => setStatus(e.target.value)} title="Status">
                         <option value="">All statuses</option>
                         {(statuses || []).map((x, i) => {
-                            const id =
-                                x?.id ??
-                                x?.statusId ??
-                                x?.courseStatusId ??
-                                statusName(x) ??
-                                i;
+                            const id = x?.courseStatusId ?? x?.statusId ?? x?.id ?? i;
+                            const label = x?.courseStatusName ?? x?.statusName ?? x?.name ?? `Status ${id}`;
                             return (
-                                <option key={id} value={x?.code ?? x?.id ?? statusName(x)}>
-                                    {statusName(x)}
+                                <option key={id} value={id}>
+                                    {label}
                                 </option>
                             );
                         })}
@@ -244,12 +233,7 @@ export default function Courses() {
                         title="Category"
                     />
 
-                    <select
-                        className="input"
-                        value={sort}
-                        onChange={(e) => setSort(e.target.value)}
-                        title="Sort"
-                    >
+                    <select className="input" value={sort} onChange={(e) => setSort(e.target.value)} title="Sort">
                         {SORTS.map((s) => (
                             <option key={s.id} value={s.id}>
                                 {s.label}
@@ -286,18 +270,11 @@ export default function Courses() {
                 ) : (
                     <div className="course-grid">
                         {rows.map((c) => {
-                            const id =
-                                c?.courseId ?? c?.id ?? c?.uuid ?? Math.random().toString(36);
-                            const title = c?.title || c?.name || "Untitled course";
-                            const desc =
-                                c?.description ||
-                                c?.shortDescription ||
-                                c?.summary ||
-                                "";
+                            const id = c?.courseId ?? c?.id ?? c?.uuid ?? Math.random().toString(36);
+                            const title = c?.courseTitle ?? c?.title ?? c?.name ?? "Untitled course";
+                            const desc = c?.courseDescription ?? c?.description ?? c?.shortDescription ?? c?.summary ?? "";
                             const lvl = levelName(c?.level ?? c?.courseLevel ?? c?.levelName);
-                            const st = statusName(
-                                c?.status ?? c?.courseStatus ?? c?.statusName
-                            );
+                            const st = statusName(c?.status ?? c?.courseStatus ?? c?.statusName);
                             const lessons = lessonCount(c);
 
                             return (
@@ -311,11 +288,9 @@ export default function Courses() {
                                         <div className="meta-line">
                                             {lvl && <span className="pill">{lvl}</span>}
                                             {st && <span className="pill ghost">{st}</span>}
-                                            {Number.isFinite(lessons) && (
-                                                <span className="muted">
-                                                    {lessons} lesson{lessons === 1 ? "" : "s"}
-                                                </span>
-                                            )}
+                                            <span className="muted">
+                                                {lessons} lesson{lessons === 1 ? "" : "s"}
+                                            </span>
                                         </div>
 
                                         {desc && (
@@ -328,10 +303,7 @@ export default function Courses() {
                                             <button className="btn primary" onClick={() => goTo(id)}>
                                                 View details
                                             </button>
-                                            <button
-                                                className="btn ghost"
-                                                onClick={() => (window.location.href = `/courses/${id}`)}
-                                            >
+                                            <button className="btn ghost" onClick={() => (window.location.href = `/courses/${id}`)}>
                                                 Preview
                                             </button>
                                         </div>
@@ -343,26 +315,24 @@ export default function Courses() {
                 )}
             </section>
 
-            {/* Pagination */}
             {!loading && total > 0 && (
                 <div className="pager container">
                     <div className="muted">
-                        Page <strong>{page + 1}</strong> of <strong>{Math.max(1, Math.ceil((total || 0) / (size || 1)))}</strong> •{" "}
+                        Page <strong>{page + 1}</strong> of{" "}
+                        <strong>{Math.max(1, Math.ceil((total || 0) / (size || 1)))}</strong> •{" "}
                         <span>{total} total</span>
                     </div>
                     <div className="pager-actions">
-                        <button
-                            className="pager-btn"
-                            disabled={page === 0}
-                            onClick={() => setPage((p) => Math.max(0, p - 1))}
-                        >
+                        <button className="pager-btn" disabled={page === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>
                             ◀ Prev
                         </button>
                         <button
                             className="pager-btn"
                             disabled={page + 1 >= Math.max(1, Math.ceil((total || 0) / (size || 1)))}
                             onClick={() =>
-                                setPage((p) => (p + 1 >= Math.max(1, Math.ceil((total || 0) / (size || 1))) ? p : p + 1))
+                                setPage((p) =>
+                                    p + 1 >= Math.max(1, Math.ceil((total || 0) / (size || 1))) ? p : p + 1
+                                )
                             }
                         >
                             Next ▶

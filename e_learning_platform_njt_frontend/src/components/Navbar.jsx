@@ -13,6 +13,13 @@ function getStoredUser() {
   }
 }
 
+function getRoleName(u) {
+  return (u?.role?.name || u?.roleName || u?.role || "")
+    .toString()
+    .trim()
+    .toUpperCase();
+}
+
 export default function Navbar() {
   const [me, setMe] = useState(() => getStoredUser());
   const [badge, setBadge] = useState(0);
@@ -22,11 +29,17 @@ export default function Navbar() {
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const isLoggedIn = !!token;
 
+  // Role iz me ili iz localStorage (fallback)
+  const roleName = getRoleName(me) || getRoleName(getStoredUser());
+  const isAdmin = roleName === "ADMIN";
+  const isTeacherOnly = roleName === "TEACHER"; // ⬅️ samo TEACHER, ne i ADMIN
+
   useEffect(() => {
     if (!isLoggedIn) return;
 
     let alive = true;
 
+    // tih refresh /me
     (async () => {
       try {
         const fresh = await getMe();
@@ -40,6 +53,7 @@ export default function Navbar() {
       }
     })();
 
+    // inicijalni badge
     (async () => {
       try {
         const u = getStoredUser() || me;
@@ -50,6 +64,7 @@ export default function Navbar() {
       } catch { }
     })();
 
+    // realtime badge preko bus-a
     const off = onUnreadChanged(async () => {
       try {
         const u = getStoredUser() || me;
@@ -96,8 +111,6 @@ export default function Navbar() {
     opacity: isActive ? 1 : 0.85,
   });
 
-  const isAdmin = me?.roleName === "ADMIN" || me?.roleId === 3;
-
   return (
     <nav className="nav">
       <div className="container nav-inner">
@@ -132,11 +145,23 @@ export default function Navbar() {
                 Notifications
               </NavLink>
 
-              {/* ⬇️ ADMIN-ONLY LINK */}
+              {/* ADMIN-ONLY */}
               {isAdmin && (
                 <NavLink to="/admin/change-role" style={active}>
                   Change role
                 </NavLink>
+              )}
+
+              {/* TEACHER-ONLY (ADMIN NE VIDI OVO) */}
+              {isTeacherOnly && (
+                <>
+                  <NavLink to="/teacher/courses" style={active}>
+                    My courses
+                  </NavLink>
+                  <NavLink to="/teacher/courses/new" style={active}>
+                    + New course
+                  </NavLink>
+                </>
               )}
             </div>
 

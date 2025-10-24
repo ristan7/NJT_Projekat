@@ -74,7 +74,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     || p.equals("/api/course-levels") || p.startsWith("/api/course-levels/")
                     || p.equals("/api/course-statuses") || p.startsWith("/api/course-statuses/")
                     || p.equals("/api/lesson-types") || p.startsWith("/api/lesson-types/")
-                    || p.equals("/api/material-types") || p.startsWith("/api/material-types/");
+                    || p.equals("/api/material-types") || p.startsWith("/api/material-types/")
+                    || p.equals("/api/enrollment-statuses") || p.startsWith("/api/enrollment-statuses/"); // ⬅️ DODATO
         }
         return false;
     }

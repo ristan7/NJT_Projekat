@@ -102,11 +102,12 @@ export default function LessonView() {
         return pick(m, "materialId", "id", "uuid");
     }
     function mtitle(m) {
-        return pick(m, "title", "name") || "Material";
+        return m?.materialTitle ?? m?.title ?? "Material";
     }
     function murl(m) {
-        return pick(m, "url", "link", "href", "path") || "";
+        return m?.resourceUrl ?? m?.url ?? "";
     }
+
 
     // 2) Ako NIJE preview, proveri enrollment (tanki guard)
     useEffect(() => {
@@ -219,7 +220,7 @@ export default function LessonView() {
                         ) : materials.length === 0 ? (
                             <div className="empty muted">No materials provided.</div>
                         ) : (
-                            <ul className="mat-list" role="list">
+                            <ul className="mat-list">
                                 {materials.map((m, i) => {
                                     const id = mid(m) ?? i;
                                     const mt = materialType(m);
@@ -228,7 +229,7 @@ export default function LessonView() {
                                     const url = murl(m);
 
                                     return (
-                                        <li className="mat-item" key={id} role="listitem">
+                                        <li className="mat-item" key={id}>
                                             <div className="mat-left">
                                                 <span className="mat-ic" aria-hidden>{ic}</span>
                                                 <div className="mat-main">

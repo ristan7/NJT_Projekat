@@ -14,11 +14,9 @@ public class LessonRepository implements MyAppRepository<Lesson, Long> {
     @PersistenceContext
     private EntityManager em;
 
-    /* ===================== Basic CRUD (iz MyAppRepository) ===================== */
     @Override
     public List<Lesson> findAll() {
-        return em.createQuery("SELECT l FROM Lesson l", Lesson.class)
-                .getResultList();
+        return em.createQuery("SELECT l FROM Lesson l", Lesson.class).getResultList();
     }
 
     @Override
@@ -49,56 +47,85 @@ public class LessonRepository implements MyAppRepository<Lesson, Long> {
         }
     }
 
-    /* ===================== Dodatne korisne metode (za sada) ===================== */
     /**
-     * Sve lekcije datog kursa, sortirane po lessonOrderIndex ASC.
+     * Sve lekcije kursa (za teachera/admina) po redosledu.
      */
     public List<Lesson> findAllByCourseId(Long courseId) {
         return em.createQuery(
-                "SELECT l FROM Lesson l "
-                + "WHERE l.course.courseId = :cid "
-                + "ORDER BY l.lessonOrderIndex ASC", Lesson.class)
-                .setParameter("cid", courseId)
-                .getResultList();
+                "SELECT l FROM Lesson l WHERE l.course.courseId = :cid ORDER BY l.lessonOrderIndex ASC",
+                Lesson.class
+        ).setParameter("cid", courseId).getResultList();
     }
 
     /**
-     * Učitavanje jedne lekcije zajedno sa materijalima (JOIN FETCH), već sortiranim po @OrderBy.
+     * Student bez enrolementa vidi samo available + freePreview.
      */
-    public Lesson findByIdWithMaterials(Long lessonId) throws Exception {
-        List<Lesson> result = em.createQuery(
-                "SELECT DISTINCT l FROM Lesson l "
-                + "LEFT JOIN FETCH l.materials m "
-                + "WHERE l.lessonId = :id", Lesson.class)
-                .setParameter("id", lessonId)
-                .getResultList();
+    public List<Lesson> findVisibleForGuestStudent(Long courseId) {
+        return em.createQuery(
+                "SELECT l FROM Lesson l "
+                + "WHERE l.course.courseId = :cid AND l.lessonAvailable = true AND l.freePreview = true "
+                + "ORDER BY l.lessonOrderIndex ASC",
+                Lesson.class
+        ).setParameter("cid", courseId).getResultList();
+    }
 
+    /**
+     * Student sa enrolementom vidi samo available (preview može biti true/false – svejedno).
+     */
+    public List<Lesson> findVisibleForEnrolledStudent(Long courseId) {
+        return em.createQuery(
+                "SELECT l FROM Lesson l "
+                + "WHERE l.course.courseId = :cid AND l.lessonAvailable = true "
+                + "ORDER BY l.lessonOrderIndex ASC",
+                Lesson.class
+        ).setParameter("cid", courseId).getResultList();
+    }
+
+    public Lesson findByIdWithMaterials(Long lessonId) throws Exception {
+        var result = em.createQuery(
+                "SELECT DISTINCT l FROM Lesson l LEFT JOIN FETCH l.materials m WHERE l.lessonId = :id",
+                Lesson.class
+        ).setParameter("id", lessonId).getResultList();
         if (result.isEmpty()) {
             throw new Exception("Lesson not found: " + lessonId);
         }
         return result.get(0);
     }
 
-    /**
-     * Koliko lekcija ima u kursu — korisno za statistiku ili validacije.
-     */
     public long countByCourseId(Long courseId) {
         return em.createQuery(
-                "SELECT COUNT(l) FROM Lesson l WHERE l.course.courseId = :cid", Long.class)
-                .setParameter("cid", courseId)
-                .getSingleResult();
+                "SELECT COUNT(l) FROM Lesson l WHERE l.course.courseId = :cid", Long.class
+        ).setParameter("cid", courseId).getSingleResult();
     }
 
-    /**
-     * Sledeći indeks redosleda za dati kurs (COALESCE(MAX)+1). Koristi se kada dodajemo novu lekciju na kraj liste.
-     */
     public int getNextOrderIndexForCourse(Long courseId) {
         Integer next = em.createQuery(
-                "SELECT COALESCE(MAX(l.lessonOrderIndex), 0) + 1 "
-                + "FROM Lesson l WHERE l.course.courseId = :cid", Integer.class)
-                .setParameter("cid", courseId)
-                .getSingleResult();
+                "SELECT COALESCE(MAX(l.lessonOrderIndex), 0) + 1 FROM Lesson l WHERE l.course.courseId = :cid",
+                Integer.class
+        ).setParameter("cid", courseId).getSingleResult();
         return next != null ? next : 1;
     }
-    
+
+    public List<Lesson> findAllByCourseIdPaged(Long courseId, int offset, int limit) {
+        var q = em.createQuery(
+                "SELECT l FROM Lesson l WHERE l.course.courseId = :cid ORDER BY l.lessonOrderIndex ASC",
+                Lesson.class
+        ).setParameter("cid", courseId);
+        if (offset > 0) {
+            q.setFirstResult(offset);
+        }
+        if (limit > 0) {
+            q.setMaxResults(limit);
+        }
+        return q.getResultList();
+    }
+
+// LessonRepository.java
+    public long countMaterialsByLessonId(Long lessonId) {
+        return em.createQuery(
+                "SELECT COUNT(m) FROM Material m WHERE m.lesson.lessonId = :lid", Long.class
+        )
+                .setParameter("lid", lessonId)
+                .getSingleResult();
+    }
 }

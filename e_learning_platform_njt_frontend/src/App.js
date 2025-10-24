@@ -20,6 +20,14 @@ import LessonView from "./pages/LessonView";
 import AdminRoute from "./components/AdminRoute";
 import AdminChangeRole from "./pages/AdminChangeRole";
 
+import TeacherRoute from "./components/TeacherRoute";
+import TeacherCourses from "./pages/TeacherCourses";
+import CourseEditor from "./pages/CourseEditor";
+import CourseManage from "./pages/CourseManage";
+import LessonEditor from "./pages/LessonEditor";
+
+import AdminEnrollments from "./pages/AdminEnrollments";
+
 
 import "./App.css";
 
@@ -104,6 +112,75 @@ export default function App() {
               <ProtectedRoute>
                 <AdminRoute>
                   <AdminChangeRole />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          {/* Teacher dashboard: moji kursevi */}
+          <Route
+            path="/teacher/courses"
+            element={
+              <ProtectedRoute>
+                <TeacherRoute>
+                  <TeacherCourses />
+                </TeacherRoute>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Kreiranje novog kursa */}
+          <Route
+            path="/teacher/courses/new"
+            element={
+              <ProtectedRoute>
+                <TeacherRoute>
+                  <CourseEditor mode="create" />
+                </TeacherRoute>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Izmena kursa */}
+          <Route
+            path="/teacher/courses/:courseId/edit"
+            element={
+              <ProtectedRoute>
+                <TeacherRoute>
+                  <CourseEditor mode="edit" />
+                </TeacherRoute>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Upravljanje lekcijama i materijalima za kurs */}
+          <Route
+            path="/teacher/courses/:courseId/manage"
+            element={
+              <ProtectedRoute>
+                <TeacherRoute>
+                  <CourseManage />
+                </TeacherRoute>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Uređivanje jedne lekcije + materijala */}
+          <Route
+            path="/teacher/courses/:courseId/lessons/:lessonId"
+            element={
+              <ProtectedRoute>
+                <TeacherRoute>
+                  <LessonEditor />
+                </TeacherRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/enrollments"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <AdminEnrollments />
                 </AdminRoute>
               </ProtectedRoute>
             }

@@ -156,3 +156,106 @@
     background: rgba(255, 72, 72, 0.08);
     border: 1px solid rgba(255, 72, 72, 0.25);
 }
+
+/* --- Manage Form (mf-*) --- */
+.cd-head--clean {
+    grid-template-columns: 1fr;
+}
+
+/* bez slike */
+
+.mf-card {
+    display: grid;
+    gap: 14px;
+    border: 1px solid rgba(15, 23, 42, .08);
+    border-radius: 16px;
+    padding: 16px;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(2, 6, 23, .06);
+}
+
+.mf-row {
+    display: grid;
+    grid-template-columns: 1.4fr .6fr;
+    gap: 12px;
+}
+
+.mf-col {
+    min-width: 0;
+}
+
+.mf-col--type {
+    width: 100%;
+}
+
+.mf-field {
+    display: grid;
+    gap: 8px;
+}
+
+.mf-label {
+    font-weight: 600;
+    color: #0F172A;
+}
+
+.mf-input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(15, 23, 42, .12);
+    background: #fff;
+    outline: none;
+}
+
+.mf-input:focus {
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, .15);
+}
+
+.mf-textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+.mf-opts {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    align-items: center;
+    gap: 12px;
+}
+
+.mf-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+}
+
+.mf-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+@media (max-width: 820px) {
+    .mf-row {
+        grid-template-columns: 1fr;
+    }
+
+    .mf-opts {
+        grid-template-columns: auto auto;
+    }
+
+    .mf-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+    }
+}
+
+/* Ukloni sve placeholder "thumb" blokove gde postoje */
+.cd-head .thumb {
+    display: none;
+}
+
+.course-card .thumb {
+    display: none;
+}

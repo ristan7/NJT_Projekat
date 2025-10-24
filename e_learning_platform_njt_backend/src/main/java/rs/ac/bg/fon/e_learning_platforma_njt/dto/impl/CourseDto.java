@@ -3,7 +3,6 @@ package rs.ac.bg.fon.e_learning_platforma_njt.dto.impl;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import rs.ac.bg.fon.e_learning_platforma_njt.dto.Dto;
 import rs.ac.bg.fon.e_learning_platforma_njt.validation.OneOfLong;
@@ -24,11 +23,6 @@ public class CourseDto implements Dto {
     @NotBlank(message = "Course description is required.")
     @Size(max = 20000, message = "Course description can be at most 20,000 characters.")
     private String courseDescription;
-
-    @NotNull(message = "Course price is required.")
-    @Digits(integer = 8, fraction = 2, message = "Course price must have up to 8 digits and 2 decimals.")
-    @PositiveOrZero(message = "Course price must be non-negative.")
-    private BigDecimal coursePrice;
 
     @NotNull(message = "Author ID is required.")
     @Positive(message = "Author ID must be positive.")
@@ -71,14 +65,12 @@ public class CourseDto implements Dto {
     }
 
     public CourseDto(Long courseId, String courseTitle, String courseDescription,
-            BigDecimal coursePrice, Long authorId,
-            Long courseLevelId, Long courseStatusId,
+            Long authorId, Long courseLevelId, Long courseStatusId,
             LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime publishedAt,
             Integer lessonCount) {
         this.courseId = courseId;
         this.courseTitle = courseTitle;
         this.courseDescription = courseDescription;
-        this.coursePrice = coursePrice;
         this.authorId = authorId;
         this.courseLevelId = courseLevelId;
         this.courseStatusId = courseStatusId;
@@ -111,14 +103,6 @@ public class CourseDto implements Dto {
 
     public void setCourseDescription(String courseDescription) {
         this.courseDescription = courseDescription;
-    }
-
-    public BigDecimal getCoursePrice() {
-        return coursePrice;
-    }
-
-    public void setCoursePrice(BigDecimal coursePrice) {
-        this.coursePrice = coursePrice;
     }
 
     public Long getAuthorId() {
@@ -183,7 +167,6 @@ public class CourseDto implements Dto {
         return "CourseDto{"
                 + "courseId=" + courseId
                 + ", courseTitle='" + courseTitle + '\''
-                + ", coursePrice=" + coursePrice
                 + ", authorId=" + authorId
                 + ", courseLevelId=" + courseLevelId
                 + ", courseStatusId=" + courseStatusId

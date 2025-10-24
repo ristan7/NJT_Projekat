@@ -2,28 +2,24 @@ package rs.ac.bg.fon.e_learning_platforma_njt.dto.impl;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
-import java.io.Serializable;
 import java.time.LocalDateTime;
+import rs.ac.bg.fon.e_learning_platforma_njt.dto.Dto;
 import rs.ac.bg.fon.e_learning_platforma_njt.validation.OneOfLong;
 
-/**
- * DTO klasa za entitet Material. Koristi se pri kreiranju, izmeni i prikazu materijala. Datumi su read-only polja koja backend automatski popunjava.
- */
-public class MaterialDto implements Serializable {
+public class MaterialDto implements Dto {
 
-    /* ===================== Polja ===================== */
-    @Positive(message = "Material ID must be a positive number.")
+    @Positive(message = "Material ID must be positive.")
     private Long materialId;
 
     @NotBlank(message = "Material title is required.")
     @Size(max = 150, message = "Material title can be at most 150 characters.")
     private String materialTitle;
 
-    @NotNull(message = "Material order index is required.")
-    @Positive(message = "Material order index must be positive.")
+    @NotNull(message = "Material order is required.")
+    @Positive(message = "Material order must be positive.")
     private Integer materialOrderIndex;
 
-    @Size(max = 10000, message = "Content can be at most 10,000 characters.")
+    @Size(max = 100000, message = "Content is too long.")
     private String content;
 
     @Size(max = 1000, message = "Resource URL can be at most 1000 characters.")
@@ -33,42 +29,24 @@ public class MaterialDto implements Serializable {
     @Positive(message = "Material type ID must be positive.")
     @OneOfLong(
             value = {1, 2, 3, 4, 5},
-            message = "Material type ID must be one of predefined values: "
-            + "1 (PDF), 2 (IMAGE), 3 (LINK), 4 (PRESENTATION), 5 (VIDEO)."
+            message = "Material type must be one of: 1 (PDF), 2 (IMAGE), 3 (LINK), 4 (PRESENTATION), 5 (VIDEO)."
     )
     private Long materialTypeId;
 
     @NotNull(message = "Lesson ID is required.")
-    @Positive(message = "Lesson ID must be a positive number.")
+    @Positive(message = "Lesson ID must be positive.")
     private Long lessonId;
 
-    /* ===================== Read-only polja ===================== */
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime createdAt;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime updatedAt;
 
-    /* ===================== Konstruktori ===================== */
     public MaterialDto() {
     }
 
-    public MaterialDto(Long materialId, String materialTitle, Integer materialOrderIndex,
-            String content, String resourceUrl,
-            Long materialTypeId, Long lessonId,
-            LocalDateTime createdAt, LocalDateTime updatedAt) {
-        this.materialId = materialId;
-        this.materialTitle = materialTitle;
-        this.materialOrderIndex = materialOrderIndex;
-        this.content = content;
-        this.resourceUrl = resourceUrl;
-        this.materialTypeId = materialTypeId;
-        this.lessonId = lessonId;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
-
-    /* ===================== Getteri i Setteri ===================== */
+    /* Getteri/Setteri */
     public Long getMaterialId() {
         return materialId;
     }
@@ -139,20 +117,5 @@ public class MaterialDto implements Serializable {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    /* ===================== toString ===================== */
-    @Override
-    public String toString() {
-        return "MaterialDto{"
-                + "materialId=" + materialId
-                + ", materialTitle='" + materialTitle + '\''
-                + ", materialOrderIndex=" + materialOrderIndex
-                + ", resourceUrl='" + resourceUrl + '\''
-                + ", materialTypeId=" + materialTypeId
-                + ", lessonId=" + lessonId
-                + ", createdAt=" + createdAt
-                + ", updatedAt=" + updatedAt
-                + '}';
     }
 }

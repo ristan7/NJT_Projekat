@@ -19,6 +19,10 @@ public class EnrollmentStatus implements MyEntity {
     public EnrollmentStatus() {
     }
 
+    public EnrollmentStatus(Long enrollmentStatusId) {
+        this.enrollmentStatusId = enrollmentStatusId;
+    }
+
     public EnrollmentStatus(String enrollmentStatusName) {
         this.enrollmentStatusName = enrollmentStatusName;
     }

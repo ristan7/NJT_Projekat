@@ -2,17 +2,17 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
  */
-package rs.ac.bg.fon.e_learning_platforma_njt.mapper;
+package rs.ac.bg.fon.e_learning_platforma_njt.service;
 
-/**
- *
- * @author mikir
- */
-public interface DtoEntityMapper<T, E> {
+public interface StatusIds {
 
-    T toDto(E e);
+    Long requested();
 
-    E toEntity(T t);
+    Long active();
 
-    void apply(T t, E e);
+    Long completed();
+
+    Long cancelled();
+
+    Long suspended();
 }
