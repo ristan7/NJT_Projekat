@@ -23,23 +23,21 @@ public class CourseService {
 
     private final CourseRepository courseRepo;
     private final CourseMapper courseMapper;
-
-    // Hook-ovi za role/vlasništvo – zameni realnom implementacijom
-    private final RoleAccessService roleAccessService;
+    private final RoleAccessService roleAccess; // top-level bean
 
     public CourseService(CourseRepository courseRepo,
             CourseMapper courseMapper,
-            RoleAccessService roleAccessService) {
+            RoleAccessService roleAccess) {
         this.courseRepo = courseRepo;
         this.courseMapper = courseMapper;
-        this.roleAccessService = roleAccessService;
+        this.roleAccess = roleAccess;
     }
 
     /* ===========================================================
        =========================== READ ===========================
        =========================================================== */
     /**
-     * Lista svih kurseva (public). Admin/Teacher vide sve; Student takođe (ali lekcije/materijale rešavaš u Lesson/Mtrl servisima).
+     * Lista svih kurseva (public).
      */
     public List<CourseDto> findAll() {
         return courseRepo.findAll().stream()
@@ -104,7 +102,7 @@ public class CourseService {
         // Primeni izmene (bez datuma; publishedAt rešava entitet/status)
         existing.setCourseTitle(dto.getCourseTitle());
         existing.setCourseDescription(dto.getCourseDescription());
-        existing.setCoursePrice(dto.getCoursePrice());
+
         if (dto.getAuthorId() != null && !Objects.equals(dto.getAuthorId(), requesterId)) {
             // zabrani promenu autora (teacher ne može da „premesti“ kurs na drugog autora)
             throw new IllegalAccessException("You cannot change course author.");
@@ -162,18 +160,6 @@ public class CourseService {
     }
 
     @Transactional
-    public CourseDto patchPrice(Long courseId, java.math.BigDecimal newPrice, Long requesterId, String roleName) throws Exception {
-        ensureTeacher(roleName);
-
-        Course c = courseRepo.findById(courseId);
-        ensureTeacherOwnsCourse(requesterId, c);
-
-        c.setCoursePrice(newPrice);
-        courseRepo.save(c);
-        return courseMapper.toDto(c);
-    }
-
-    @Transactional
     public CourseDto patchLevel(Long courseId, Long levelId, Long requesterId, String roleName) throws Exception {
         ensureTeacher(roleName);
 
@@ -202,7 +188,7 @@ public class CourseService {
        ====================== Helper / Guard ======================
        =========================================================== */
     private void ensureTeacher(String roleName) throws IllegalAccessException {
-        if (!roleAccessService.isTeacher(roleName)) {
+        if (!roleAccess.isTeacher(roleName)) {
             throw new IllegalAccessException("Only TEACHER can modify courses.");
         }
     }
@@ -212,18 +198,5 @@ public class CourseService {
                 || !Objects.equals(course.getAuthor().getUserId(), teacherId)) {
             throw new IllegalAccessException("You can modify only your own courses.");
         }
-    }
-
-    /* ==================== Hook interfejs ===================== */
-    /**
-     * Helper za uloge (ADMIN/TEACHER/STUDENT). Implementiraj preko SecurityContext-a ili tvog auth-a.
-     */
-    public interface RoleAccessService {
-
-        boolean isAdmin(String roleName);
-
-        boolean isTeacher(String roleName);
-
-        boolean isStudent(String roleName);
     }
 }

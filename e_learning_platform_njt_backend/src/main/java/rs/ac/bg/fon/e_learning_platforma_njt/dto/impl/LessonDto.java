@@ -2,17 +2,12 @@ package rs.ac.bg.fon.e_learning_platforma_njt.dto.impl;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.*;
-import java.io.Serializable;
 import java.time.LocalDateTime;
 import rs.ac.bg.fon.e_learning_platforma_njt.dto.Dto;
 import rs.ac.bg.fon.e_learning_platforma_njt.validation.OneOfLong;
 
-/**
- * DTO klasa za entitet Lesson. Koristi se za kreiranje, izmenu i prikaz lekcija. Datumi su read-only polja koja backend automatski popunjava.
- */
-public class LessonDto implements Dto, Serializable {
+public class LessonDto implements Dto {
 
-    /* ===================== Polja ===================== */
     @Positive(message = "Lesson ID must be positive.")
     private Long lessonId;
 
@@ -23,16 +18,25 @@ public class LessonDto implements Dto, Serializable {
     @Size(max = 300, message = "Lesson summary can be at most 300 characters.")
     private String lessonSummary;
 
-    @NotNull(message = "Lesson order index is required.")
-    @Positive(message = "Lesson order index must be positive.")
+    @NotNull(message = "Lesson order is required.")
+    @Positive(message = "Lesson order must be positive.")
     private Integer lessonOrderIndex;
+
+    /**
+     * Draft/Publish prekidač
+     */
+    private boolean lessonAvailable;
+
+    /**
+     * Ako je true i lekcija je available, student može da je gleda i bez enrolementa.
+     */
+    private boolean freePreview;
 
     @NotNull(message = "Lesson type ID is required.")
     @Positive(message = "Lesson type ID must be positive.")
     @OneOfLong(
             value = {1, 2, 3, 4},
-            message = "Lesson type ID must be one of predefined values: "
-            + "1 (VIDEO), 2 (ARTICLE), 3 (QUIZ), 4 (ASSIGNMENT)."
+            message = "Lesson type must be one of: 1 (VIDEO), 2 (ARTICLE), 3 (QUIZ), 4 (ASSIGNMENT)."
     )
     private Long lessonTypeId;
 
@@ -40,35 +44,16 @@ public class LessonDto implements Dto, Serializable {
     @Positive(message = "Course ID must be positive.")
     private Long courseId;
 
-    @NotNull(message = "Lesson availability flag is required.")
-    private Boolean lessonAvailable;
-
-    /* ===================== Read-only polja ===================== */
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime createdAt;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private LocalDateTime updatedAt;
 
-    /* ===================== Konstruktori ===================== */
     public LessonDto() {
     }
 
-    public LessonDto(Long lessonId, String lessonTitle, String lessonSummary,
-            Integer lessonOrderIndex, Long lessonTypeId, Long courseId,
-            Boolean lessonAvailable, LocalDateTime createdAt, LocalDateTime updatedAt) {
-        this.lessonId = lessonId;
-        this.lessonTitle = lessonTitle;
-        this.lessonSummary = lessonSummary;
-        this.lessonOrderIndex = lessonOrderIndex;
-        this.lessonTypeId = lessonTypeId;
-        this.courseId = courseId;
-        this.lessonAvailable = lessonAvailable;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
-
-    /* ===================== Getteri i Setteri ===================== */
+    // Getteri/Setteri
     public Long getLessonId() {
         return lessonId;
     }
@@ -101,6 +86,22 @@ public class LessonDto implements Dto, Serializable {
         this.lessonOrderIndex = lessonOrderIndex;
     }
 
+    public boolean isLessonAvailable() {
+        return lessonAvailable;
+    }
+
+    public void setLessonAvailable(boolean lessonAvailable) {
+        this.lessonAvailable = lessonAvailable;
+    }
+
+    public boolean isFreePreview() {
+        return freePreview;
+    }
+
+    public void setFreePreview(boolean freePreview) {
+        this.freePreview = freePreview;
+    }
+
     public Long getLessonTypeId() {
         return lessonTypeId;
     }
@@ -117,14 +118,6 @@ public class LessonDto implements Dto, Serializable {
         this.courseId = courseId;
     }
 
-    public Boolean getLessonAvailable() {
-        return lessonAvailable;
-    }
-
-    public void setLessonAvailable(Boolean lessonAvailable) {
-        this.lessonAvailable = lessonAvailable;
-    }
-
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -139,20 +132,5 @@ public class LessonDto implements Dto, Serializable {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    /* ===================== toString ===================== */
-    @Override
-    public String toString() {
-        return "LessonDto{"
-                + "lessonId=" + lessonId
-                + ", lessonTitle='" + lessonTitle + '\''
-                + ", lessonOrderIndex=" + lessonOrderIndex
-                + ", lessonTypeId=" + lessonTypeId
-                + ", courseId=" + courseId
-                + ", lessonAvailable=" + lessonAvailable
-                + ", createdAt=" + createdAt
-                + ", updatedAt=" + updatedAt
-                + '}';
     }
 }

@@ -11,5 +11,8 @@ package rs.ac.bg.fon.e_learning_platforma_njt.mapper;
 public interface DtoEntityMapper<T, E> {
 
     T toDto(E e);
+
     E toEntity(T t);
+
+    void apply(T t, E e);
 }

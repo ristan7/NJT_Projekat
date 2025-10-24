@@ -5,6 +5,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import java.util.List;
 import org.springframework.stereotype.Repository;
+import rs.ac.bg.fon.e_learning_platforma_njt.entity.impl.Course;
 import rs.ac.bg.fon.e_learning_platforma_njt.entity.impl.User;
 import rs.ac.bg.fon.e_learning_platforma_njt.repository.MyAppRepository;
 
@@ -118,6 +119,41 @@ public class UserRepository implements MyAppRepository<User, Long> {
         return em.createQuery(
                 "SELECT u FROM User u WHERE u.role.roleName = :rn", User.class
         ).setParameter("rn", roleName).getResultList();
+    }
+
+    public List<Course> findAllPaged(int offset, int limit) {
+        var q = em.createQuery(
+                "SELECT c FROM Course c ORDER BY c.createdAt DESC", Course.class);
+        if (offset > 0) {
+            q.setFirstResult(offset);
+        }
+        if (limit > 0) {
+            q.setMaxResults(limit);
+        }
+        return q.getResultList();
+    }
+
+    /**
+     * Courses authored by teacher, with optional status filter and paging
+     */
+    public List<Course> findAllByAuthorAndStatus(Long authorId, Long statusId, int offset, int limit) {
+        String jpql = """
+        SELECT c FROM Course c
+        WHERE c.author.userId = :uid
+          %s
+        ORDER BY c.createdAt DESC
+        """.formatted(statusId != null ? "AND c.courseStatus.courseStatusId = :sid" : "");
+        var q = em.createQuery(jpql, Course.class).setParameter("uid", authorId);
+        if (statusId != null) {
+            q.setParameter("sid", statusId);
+        }
+        if (offset > 0) {
+            q.setFirstResult(offset);
+        }
+        if (limit > 0) {
+            q.setMaxResults(limit);
+        }
+        return q.getResultList();
     }
 
 }

@@ -1,5 +1,6 @@
 package rs.ac.bg.fon.e_learning_platforma_njt.mapper.impl;
 
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Component;
 import rs.ac.bg.fon.e_learning_platforma_njt.dto.impl.CourseDto;
 import rs.ac.bg.fon.e_learning_platforma_njt.entity.impl.Course;
@@ -21,17 +22,18 @@ public class CourseMapper implements DtoEntityMapper<CourseDto, Course> {
         Long courseLevelId = (e.getCourseLevel() != null) ? e.getCourseLevel().getCourseLevelId() : null;
         Long courseStatusId = (e.getCourseStatus() != null) ? e.getCourseStatus().getCourseStatusId() : null;
 
-        Integer lessonCount = 0;
-        if (e.getLessons() != null) {
-            // Napomena: ako želiš izbeći lazy inicijalizaciju, lessonCount može doći iz custom query-ja u servisu.
-            lessonCount = e.getLessons().size();
+        Integer lessonCount = null;
+        try {
+            if (e.getLessons() != null && Hibernate.isInitialized(e.getLessons())) {
+                lessonCount = e.getLessons().size();
+            }
+        } catch (Exception ignore) {
         }
 
         return new CourseDto(
                 e.getCourseId(),
                 e.getCourseTitle(),
                 e.getCourseDescription(),
-                e.getCoursePrice(),
                 authorId,
                 courseLevelId,
                 courseStatusId,
@@ -53,38 +55,41 @@ public class CourseMapper implements DtoEntityMapper<CourseDto, Course> {
         CourseStatus courseStatus = (t.getCourseStatusId() != null) ? new CourseStatus(t.getCourseStatusId()) : null;
 
         Course e = new Course();
-        e.setCourseId(t.getCourseId()); // null kod create, setovano kod update
-        e.setCourseTitle(t.getCourseTitle());
-        e.setCourseDescription(t.getCourseDescription());
-        e.setCoursePrice(t.getCoursePrice());
+        e.setCourseId(t.getCourseId());
+        e.setCourseTitle(safeTrim(t.getCourseTitle()));
+        e.setCourseDescription(safeTrim(t.getCourseDescription()));
         e.setAuthor(author);
         e.setCourseLevel(courseLevel);
-
-        // koristimo setter da bi entitet eventualno postavio publishedAt kada status postane PUBLISHED
         e.setCourseStatus(courseStatus);
 
-        // createdAt/updatedAt/publishedAt NE setujemo ovde (audit & biz. logika u entitetu/servisu)
+        // Datumi i publish logika ostaju u entitetu
         return e;
     }
 
     /**
-     * Primeni izmene iz DTO-a na postojeći entitet (UPDATE).
+     * Primeni izmene iz DTO-a na postojeći entitet (UPDATE). - Ne menjamo autora (određuje se kroz autentifikaciju).
      */
+    @Override
     public void apply(CourseDto t, Course e) {
         if (t == null || e == null) {
             return;
         }
 
-        e.setCourseTitle(t.getCourseTitle());
-        e.setCourseDescription(t.getCourseDescription());
-        e.setCoursePrice(t.getCoursePrice());
-        e.setAuthor(t.getAuthorId() != null ? new User(t.getAuthorId()) : null);
-        e.setCourseLevel(t.getCourseLevelId() != null ? new CourseLevel(t.getCourseLevelId()) : null);
+        e.setCourseTitle(safeTrim(t.getCourseTitle()));
+        e.setCourseDescription(safeTrim(t.getCourseDescription()));
 
-        // setter zadržava logiku publish timestamp-a
-        e.setCourseStatus(t.getCourseStatusId() != null ? new CourseStatus(t.getCourseStatusId()) : null);
+        if (t.getCourseLevelId() != null) {
+            e.setCourseLevel(new CourseLevel(t.getCourseLevelId()));
+        }
 
-        // Datume NE diramo; updatedAt će se osvežiti preko @PreUpdate
-        // publishedAt menja entitet kada status postane PUBLISHED (ako je ranije bio null)
+        if (t.getCourseStatusId() != null) {
+            e.setCourseStatus(new CourseStatus(t.getCourseStatusId()));
+        }
+        // Datumi se ne diraju; updatedAt se osvežava preko @PreUpdate u entitetu.
+    }
+
+    // Helper
+    private String safeTrim(String s) {
+        return (s == null) ? null : s.trim();
     }
 }

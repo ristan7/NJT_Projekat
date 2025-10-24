@@ -1,9 +1,11 @@
 package rs.ac.bg.fon.e_learning_platforma_njt.entity.lookup;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.util.Objects;
 import rs.ac.bg.fon.e_learning_platforma_njt.entity.MyEntity;
 
+@JsonIgnoreProperties({"courses"}) // sprečava kružnu serializaciju sa Course
 @Entity
 @Table(name = "course_level")
 public class CourseLevel implements MyEntity {
@@ -48,24 +50,16 @@ public class CourseLevel implements MyEntity {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
+        if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final CourseLevel other = (CourseLevel) obj;
-        if (!Objects.equals(this.courseLevelName, other.courseLevelName)) {
-            return false;
-        }
-        return Objects.equals(this.courseLevelId, other.courseLevelId);
+        CourseLevel other = (CourseLevel) obj;
+        return Objects.equals(courseLevelId, other.courseLevelId)
+                && Objects.equals(courseLevelName, other.courseLevelName);
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("CourseLevel: ").append(courseLevelName);
-        return sb.toString();
+        return "CourseLevel: " + courseLevelName;
     }
-
 }

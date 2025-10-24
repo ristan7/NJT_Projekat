@@ -16,29 +16,34 @@ import rs.ac.bg.fon.e_learning_platforma_njt.entity.lookup.LessonType;
             @Index(name = "ix_lesson_type", columnList = "lesson_type_id"),
             @Index(name = "ix_lesson_order", columnList = "course_id,lesson_order_index")
         })
-public class Lesson implements MyEntity{
+public class Lesson implements MyEntity {
 
-    /* ===================== Polja ===================== */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "lesson_id")
     private Long lessonId;
 
-    @NotBlank(message = "Lesson title is required.")
-    @Size(max = 150, message = "Lesson title can be at most 150 characters.")
+    @NotBlank
+    @Size(max = 150)
     @Column(name = "lesson_title", nullable = false, length = 150)
     private String lessonTitle;
 
-    @Size(max = 300, message = "Lesson summary can be at most 300 characters.")
+    @Size(max = 300)
     @Column(name = "lesson_summary", length = 300)
     private String lessonSummary;
 
-    @Positive(message = "Lesson order index must be positive.")
+    @Positive
     @Column(name = "lesson_order_index", nullable = false)
     private Integer lessonOrderIndex;
 
     @Column(name = "lesson_available", nullable = false)
     private boolean lessonAvailable = false;
+
+    /**
+     * Ako je true i lekcija je available, student sme bez enrolementa
+     */
+    @Column(name = "free_preview", nullable = false)
+    private boolean freePreview = false;
 
     @PastOrPresent
     @Column(name = "created_at", nullable = false)
@@ -48,7 +53,6 @@ public class Lesson implements MyEntity{
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    /* ===================== Relacije ===================== */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "lesson_type_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_lesson_type"))
@@ -63,7 +67,6 @@ public class Lesson implements MyEntity{
     @OrderBy("materialOrderIndex ASC")
     private List<Material> materials = new ArrayList<>();
 
-    /* ===================== Lifecycle hook-ovi za datume ===================== */
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
@@ -76,7 +79,6 @@ public class Lesson implements MyEntity{
         this.updatedAt = LocalDateTime.now();
     }
 
-    /* ===================== Konstruktori ===================== */
     public Lesson() {
     }
 
@@ -84,7 +86,7 @@ public class Lesson implements MyEntity{
         this.lessonId = lessonId;
     }
 
-    /* ===================== Getteri i Setteri ===================== */
+    // Getteri/Setteri
     public Long getLessonId() {
         return lessonId;
     }
@@ -125,6 +127,14 @@ public class Lesson implements MyEntity{
         this.lessonAvailable = lessonAvailable;
     }
 
+    public boolean isFreePreview() {
+        return freePreview;
+    }
+
+    public void setFreePreview(boolean freePreview) {
+        this.freePreview = freePreview;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -157,7 +167,6 @@ public class Lesson implements MyEntity{
         this.materials = materials;
     }
 
-    /* ===================== Helper metode ===================== */
     public void addMaterial(Material material) {
         if (material == null) {
             return;
@@ -174,7 +183,6 @@ public class Lesson implements MyEntity{
         material.setLesson(null);
     }
 
-    /* ===================== equals, hashCode, toString ===================== */
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -197,9 +205,9 @@ public class Lesson implements MyEntity{
         return "Lesson{"
                 + "lessonId=" + lessonId
                 + ", lessonTitle='" + lessonTitle + '\''
-                + ", lessonOrderIndex=" + lessonOrderIndex
-                + ", lessonAvailable=" + lessonAvailable
-                + ", lessonType=" + (lessonType != null ? lessonType.getLessonTypeName() : "null")
+                + ", order=" + lessonOrderIndex
+                + ", available=" + lessonAvailable
+                + ", preview=" + freePreview
                 + '}';
     }
 }

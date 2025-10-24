@@ -80,6 +80,72 @@ export async function getUsers() {
   return data;
 }
 
+// ---------- ADMIN: CHANGE ROLE ----------
+export async function updateUserRole(userId, roleId) {
+  await http.patch(`/auth/admin/users/${userId}`, { roleId });
+}
+
+// ---------- STUDENT ACCESS REQUEST ----------
+/**
+ * Student traži pristup kursu -> šaljemo notifikaciju ADMIN-ima
+ * Prefer: /courses/:id/request-access
+ * Fallback: kreiraj po jednu notifikaciju ka svakom adminu
+ */
+export async function requestCourseAccess(courseId, note = "") {
+  const cid = Number(courseId);
+  const meStr = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+  const me = meStr ? JSON.parse(meStr) : null;
+
+  // 1) probaj dedicated endpoint
+  try {
+    await http.post(`/courses/${cid}/request-access`, { message: note });
+    return true;
+  } catch { }
+
+  // 2) fallback: pošalji notifikacije adminima
+  let admins = [];
+  try {
+    const { data: users } = await http.get("/auth/users");
+    admins = (users || []).filter(
+      (u) => (u?.roleId === 3) || String(u?.roleName || "").toUpperCase() === "ADMIN"
+    );
+  } catch { }
+
+  const title = `Access request for course #${cid}`;
+  const msg =
+    note?.trim() ||
+    `User ${me?.username || me?.email || me?.id} is requesting access to course ${cid}.`;
+
+  // ako nema userId admina, pošalji generičnu (bek može da route-uje)
+  if (!admins.length) {
+    try {
+      await http.post(`/notifications`, {
+        notificationTitle: title,
+        notificationMessage: msg,
+        // optional type id/name:
+        // notificationTypeId: ... ili notificationTypeName: "REQUEST_ACCESS"
+      });
+      return true;
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  // inače – pošalji svima adminima
+  await Promise.all(
+    admins.map((a) =>
+      http.post(`/notifications`, {
+        notificationTitle: title,
+        notificationMessage: msg,
+        userId: a?.userId ?? a?.id,
+      })
+    )
+  );
+  return true;
+}
+
+
+
 // ---------- STUB KURSEVA (Home) ----------
 export async function getRecommendedCourses() {
   return Promise.resolve([

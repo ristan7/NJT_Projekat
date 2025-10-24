@@ -19,17 +19,16 @@ public class MaterialMapper implements DtoEntityMapper<MaterialDto, Material> {
         Long materialTypeId = (e.getMaterialType() != null) ? e.getMaterialType().getMaterialTypeId() : null;
         Long lessonId = (e.getLesson() != null) ? e.getLesson().getLessonId() : null;
 
-        MaterialDto dto = new MaterialDto(
-                e.getMaterialId(),
-                e.getMaterialTitle(),
-                e.getMaterialOrderIndex(),
-                e.getContent(),
-                e.getResourceUrl(),
-                materialTypeId,
-                lessonId,
-                e.getCreatedAt(), // read-only izlaz
-                e.getUpdatedAt() // read-only izlaz
-        );
+        MaterialDto dto = new MaterialDto();
+        dto.setMaterialId(e.getMaterialId());
+        dto.setMaterialTitle(e.getMaterialTitle());
+        dto.setMaterialOrderIndex(e.getMaterialOrderIndex());
+        dto.setContent(e.getContent());
+        dto.setResourceUrl(e.getResourceUrl());
+        dto.setMaterialTypeId(materialTypeId);
+        dto.setLessonId(lessonId);
+        dto.setCreatedAt(e.getCreatedAt()); // READ_ONLY izlaz
+        dto.setUpdatedAt(e.getUpdatedAt()); // READ_ONLY izlaz
         return dto;
     }
 
@@ -39,37 +38,62 @@ public class MaterialMapper implements DtoEntityMapper<MaterialDto, Material> {
             return null;
         }
 
-        MaterialType type = (t.getMaterialTypeId() != null) ? new MaterialType(t.getMaterialTypeId()) : null;
-        Lesson lesson = (t.getLessonId() != null) ? new Lesson(t.getLessonId()) : null;
-
         Material e = new Material();
-        e.setMaterialId(t.getMaterialId());                 // null kod create, setovano kod update
-        e.setMaterialTitle(t.getMaterialTitle());
-        e.setMaterialOrderIndex(t.getMaterialOrderIndex());
-        e.setContent(t.getContent());
-        e.setResourceUrl(t.getResourceUrl());
-        e.setMaterialType(type);
-        e.setLesson(lesson);
-
-        // createdAt / updatedAt NE postavljamo: @PrePersist/@PreUpdate u entitetu
+        e.setMaterialId(t.getMaterialId()); // null za create
+        if (t.getMaterialTitle() != null) {
+            e.setMaterialTitle(safeTrim(t.getMaterialTitle()));
+        }
+        if (t.getMaterialOrderIndex() != null) {
+            e.setMaterialOrderIndex(t.getMaterialOrderIndex());
+        }
+        if (t.getContent() != null) {
+            e.setContent(t.getContent());
+        }
+        if (t.getResourceUrl() != null) {
+            e.setResourceUrl(safeTrim(t.getResourceUrl()));
+        }
+        if (t.getMaterialTypeId() != null) {
+            e.setMaterialType(new MaterialType(t.getMaterialTypeId()));
+        }
+        if (t.getLessonId() != null) {
+            e.setLesson(new Lesson(t.getLessonId()));
+        }
+        // createdAt/updatedAt: @PrePersist/@PreUpdate
         return e;
     }
 
     /**
-     * Primeni izmene iz DTO-a na postojeći entitet (UPDATE).
+     * Partial UPDATE: - String/int polja menjamo samo ako su prosleđena (≠ null). - materialType menjamo samo ako je prosleđen ID. - lesson menjamo samo ako je prosleđen lessonId (inače ostaje postojeći).
      */
+    @Override
     public void apply(MaterialDto t, Material e) {
         if (t == null || e == null) {
             return;
         }
 
-        e.setMaterialTitle(t.getMaterialTitle());
-        e.setMaterialOrderIndex(t.getMaterialOrderIndex());
-        e.setContent(t.getContent());
-        e.setResourceUrl(t.getResourceUrl());
-        e.setMaterialType(t.getMaterialTypeId() != null ? new MaterialType(t.getMaterialTypeId()) : null);
-        e.setLesson(t.getLessonId() != null ? new Lesson(t.getLessonId()) : null);
+        if (t.getMaterialTitle() != null) {
+            e.setMaterialTitle(safeTrim(t.getMaterialTitle()));
+        }
+        if (t.getMaterialOrderIndex() != null) {
+            e.setMaterialOrderIndex(t.getMaterialOrderIndex());
+        }
+        if (t.getContent() != null) {
+            e.setContent(t.getContent());
+        }
+        if (t.getResourceUrl() != null) {
+            e.setResourceUrl(safeTrim(t.getResourceUrl()));
+        }
+        if (t.getMaterialTypeId() != null) {
+            e.setMaterialType(new MaterialType(t.getMaterialTypeId()));
+        }
+        // po novoj logici: lesson ne premeštamo slučajno; samo ako je eksplicitno prosleđen ID
+        if (t.getLessonId() != null) {
+            e.setLesson(new Lesson(t.getLessonId()));
+        }
+        // Datume ne diramo (updatedAt ide preko @PreUpdate)
+    }
 
-        // createdAt / updatedAt NE diramo; updatedAt će se osvežiti preko @PreUpdate
+    private String safeTrim(String s) {
+        return (s == null) ? null : s.trim();
     }
 }

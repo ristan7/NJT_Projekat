@@ -4,8 +4,8 @@
  */
 /**
  * Author:  mikir
- * Created: Oct 15, 2025
+ * Created: Oct 24, 2025
  */
+-- Dodatno: podesiti default vreme slanja notifikacije
 ALTER TABLE notification
-    MODIFY COLUMN sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;
-
+  MODIFY COLUMN sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;

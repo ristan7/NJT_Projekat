@@ -16,7 +16,7 @@ export default function Home() {
         const u = await getMe();
         setMe(u);
 
-        const uid = u.id || u.userId;
+        const uid = u?.id || u?.userId;
         const unreadList = await getNotifications({ userId: uid, unread: true, limit: 3 });
         const r = await getRecommendedCourses();
 
@@ -39,7 +39,8 @@ export default function Home() {
             <p className="muted">Welcome to your dashboard.</p>
             <div className="quick-actions">
               <a className="btn primary" href="/notifications">Go to Notifications</a>
-              <a className="btn ghost" href="/">Back to Home</a>
+              {/* FIX: vodi u katalog kurseva */}
+              <a className="btn ghost" href="/courses">Browse courses</a>
             </div>
           </div>
 
@@ -102,11 +103,13 @@ export default function Home() {
           <div className="card">
             <div className="card-head">
               <h3>Recommended courses</h3>
-              <a className="link" href="/">Catalog</a>
+              {/* FIX: link ka katalogu */}
+              <a className="link" href="/courses">Catalog</a>
             </div>
             <div className="courses">
               {recs.map((c) => (
-                <a key={c.id} className="course" href={`/course/${c.id}`}>
+                // FIX: detalj kursa => /courses/:id (plural)
+                <a key={c.id} className="course" href={`/courses/${c.id}`}>
                   <div className="thumb" />
                   <div className="course-title">{c.title}</div>
                   <div className="muted">{c.meta}</div>

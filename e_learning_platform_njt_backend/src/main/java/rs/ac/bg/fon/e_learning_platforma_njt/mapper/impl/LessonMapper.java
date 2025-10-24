@@ -19,17 +19,18 @@ public class LessonMapper implements DtoEntityMapper<LessonDto, Lesson> {
         Long lessonTypeId = (e.getLessonType() != null) ? e.getLessonType().getLessonTypeId() : null;
         Long courseId = (e.getCourse() != null) ? e.getCourse().getCourseId() : null;
 
-        return new LessonDto(
-                e.getLessonId(),
-                e.getLessonTitle(),
-                e.getLessonSummary(),
-                e.getLessonOrderIndex(),
-                lessonTypeId,
-                courseId,
-                /* lessonAvailable */ e.isLessonAvailable(),
-                /* createdAt */ e.getCreatedAt(),
-                /* updatedAt */ e.getUpdatedAt()
-        );
+        LessonDto dto = new LessonDto();
+        dto.setLessonId(e.getLessonId());
+        dto.setLessonTitle(e.getLessonTitle());
+        dto.setLessonSummary(e.getLessonSummary());
+        dto.setLessonOrderIndex(e.getLessonOrderIndex());
+        dto.setLessonAvailable(e.isLessonAvailable());
+        dto.setFreePreview(e.isFreePreview());           // NEW
+        dto.setLessonTypeId(lessonTypeId);
+        dto.setCourseId(courseId);
+        dto.setCreatedAt(e.getCreatedAt());
+        dto.setUpdatedAt(e.getUpdatedAt());
+        return dto;
     }
 
     @Override
@@ -38,38 +39,56 @@ public class LessonMapper implements DtoEntityMapper<LessonDto, Lesson> {
             return null;
         }
 
-        LessonType lessonType = (t.getLessonTypeId() != null) ? new LessonType(t.getLessonTypeId()) : null;
-        Course course = (t.getCourseId() != null) ? new Course(t.getCourseId()) : null;
-
         Lesson e = new Lesson();
-        e.setLessonId(t.getLessonId()); // null kod create, setovano kod update
-        e.setLessonTitle(t.getLessonTitle());
-        e.setLessonSummary(t.getLessonSummary());
-        e.setLessonOrderIndex(t.getLessonOrderIndex());
-        e.setLessonType(lessonType);
-        e.setCourse(course);
-        e.setLessonAvailable(Boolean.TRUE.equals(t.getLessonAvailable()));
+        e.setLessonId(t.getLessonId());
 
-        // createdAt/updatedAt ne postavljamo ovde; @PrePersist/@PreUpdate u entitetu
+        if (t.getLessonTitle() != null) {
+            e.setLessonTitle(safeTrim(t.getLessonTitle()));
+        }
+        if (t.getLessonSummary() != null) {
+            e.setLessonSummary(safeTrim(t.getLessonSummary()));
+        }
+        if (t.getLessonOrderIndex() != null) {
+            e.setLessonOrderIndex(t.getLessonOrderIndex());
+        }
+
+        if (t.getLessonTypeId() != null) {
+            e.setLessonType(new LessonType(t.getLessonTypeId()));
+        }
+        if (t.getCourseId() != null) {
+            e.setCourse(new Course(t.getCourseId()));
+        }
+
+        e.setLessonAvailable(t.isLessonAvailable());
+        e.setFreePreview(t.isFreePreview());             // NEW
         return e;
     }
 
-    /**
-     * Primeni izmene DTO-a na postojeći entitet (UPDATE).
-     */
+    @Override
     public void apply(LessonDto t, Lesson e) {
         if (t == null || e == null) {
             return;
         }
 
-        e.setLessonTitle(t.getLessonTitle());
-        e.setLessonSummary(t.getLessonSummary());
-        e.setLessonOrderIndex(t.getLessonOrderIndex());
-        e.setLessonType(t.getLessonTypeId() != null ? new LessonType(t.getLessonTypeId()) : null);
-        e.setCourse(t.getCourseId() != null ? new Course(t.getCourseId()) : null);
-        if (t.getLessonAvailable() != null) {
-            e.setLessonAvailable(t.getLessonAvailable());
+        if (t.getLessonTitle() != null) {
+            e.setLessonTitle(safeTrim(t.getLessonTitle()));
         }
-        // createdAt/updatedAt ne diramo; updatedAt će se osvežiti preko @PreUpdate
+        if (t.getLessonSummary() != null) {
+            e.setLessonSummary(safeTrim(t.getLessonSummary()));
+        }
+        if (t.getLessonOrderIndex() != null) {
+            e.setLessonOrderIndex(t.getLessonOrderIndex());
+        }
+        if (t.getLessonTypeId() != null) {
+            e.setLessonType(new LessonType(t.getLessonTypeId()));
+        }
+        // course se ne menja u generalnom update-u
+
+        e.setLessonAvailable(t.isLessonAvailable());
+        e.setFreePreview(t.isFreePreview());             // NEW
+    }
+
+    private String safeTrim(String s) {
+        return (s == null) ? null : s.trim();
     }
 }

@@ -1,9 +1,11 @@
 package rs.ac.bg.fon.e_learning_platforma_njt.entity.lookup;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.util.Objects;
 import rs.ac.bg.fon.e_learning_platforma_njt.entity.MyEntity;
 
+@JsonIgnoreProperties({"materials"})
 @Entity
 @Table(name = "material_type")
 public class MaterialType implements MyEntity {
@@ -48,24 +50,16 @@ public class MaterialType implements MyEntity {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
+        if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final MaterialType other = (MaterialType) obj;
-        if (!Objects.equals(this.materialTypeName, other.materialTypeName)) {
-            return false;
-        }
-        return Objects.equals(this.materialTypeId, other.materialTypeId);
+        MaterialType other = (MaterialType) obj;
+        return Objects.equals(materialTypeId, other.materialTypeId)
+                && Objects.equals(materialTypeName, other.materialTypeName);
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("MaterialType: ").append(materialTypeName);
-        return sb.toString();
+        return "MaterialType: " + materialTypeName;
     }
-
 }

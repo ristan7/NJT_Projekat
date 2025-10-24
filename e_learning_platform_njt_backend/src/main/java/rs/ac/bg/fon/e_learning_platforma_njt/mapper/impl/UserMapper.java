@@ -53,4 +53,9 @@ public class UserMapper implements DtoEntityMapper<UserDto, User> {
         u.setFirstName(firstName);
         u.setLastName(lastName);
     }
+
+    @Override
+    public void apply(UserDto t, User e) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
 }

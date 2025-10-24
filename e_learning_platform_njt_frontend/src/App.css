@@ -390,3 +390,28 @@ body {
 .course-title {
   font-weight: 700;
 }
+
+.role-form select {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, .12);
+}
+
+.input-like {
+  display: none
+}
+
+/* placeholder hook iz CourseManage */
+
+.toast {
+  position: fixed;
+  right: 16px;
+  bottom: 18px;
+  background: #0f172a;
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+  z-index: 9999;
+}

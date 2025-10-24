@@ -4,11 +4,14 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import rs.ac.bg.fon.e_learning_platforma_njt.dto.impl.CourseDto;
+import rs.ac.bg.fon.e_learning_platforma_njt.security.JwtService;
 import rs.ac.bg.fon.e_learning_platforma_njt.service.CourseService;
 
 @CrossOrigin(origins = "http://localhost:3000")
@@ -17,18 +20,31 @@ import rs.ac.bg.fon.e_learning_platforma_njt.service.CourseService;
 public class CourseController {
 
     private final CourseService courseService;
+    private final JwtService jwtService;
 
-    // TODO: zameni ovim metodama realan SecurityContext/JWT iz kojeg čitaš userId + role
+    public CourseController(CourseService courseService, JwtService jwtService) {
+        this.courseService = courseService;
+        this.jwtService = jwtService;
+    }
+
     private Long getRequesterId() {
-        return 1L;
+        String token = jwtService.extractTokenFromHeader();
+        return jwtService.requireUserId(token);
     }
 
     private String getRoleName() {
-        return "TEACHER";
-    } // "STUDENT" | "TEACHER" | "ADMIN"
-
-    public CourseController(CourseService courseService) {
-        this.courseService = courseService;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()) {
+            for (GrantedAuthority ga : auth.getAuthorities()) {
+                String r = ga.getAuthority(); // npr. ROLE_TEACHER
+                if (r != null) {
+                    return r.startsWith("ROLE_") ? r.substring(5) : r;
+                }
+            }
+        }
+        String token = jwtService.extractTokenFromHeader();
+        String claimRole = jwtService.extractRoleName(token);
+        return claimRole != null ? claimRole : "ANON";
     }
 
     /* ============================ READ ============================ */
@@ -51,7 +67,7 @@ public class CourseController {
         return ResponseEntity.ok(courseService.findAllByAuthor(authorId));
     }
 
-    // Jednostavna pretraga po naslovu (ostaje read-only za sve)
+    // Jednostavna pretraga po naslovu
     @PreAuthorize("hasAnyRole('STUDENT','TEACHER','ADMIN')")
     @GetMapping("/search")
     public ResponseEntity<List<CourseDto>> search(@RequestParam(name = "q", required = false) String q) {
@@ -82,17 +98,15 @@ public class CourseController {
     @DeleteMapping("/{courseId}")
     public ResponseEntity<Void> delete(@PathVariable Long courseId) throws Exception {
         Long requesterId = getRequesterId();
-        String roleName = getRoleName(); // nije neophodno, ali ostavljeno radi konzistentnosti
+        String roleName = getRoleName();
         courseService.delete(courseId, requesterId, roleName);
         return ResponseEntity.noContent().build();
     }
 
     /* ============================ PATCH (TEACHER) ============================ */
-    // Minimalistički PATCH endpointi po polju (mogu se spajati u jedan generic PATCH ako želiš)
     @PreAuthorize("hasRole('TEACHER')")
     @PatchMapping("/{courseId}/title")
-    public ResponseEntity<CourseDto> patchTitle(@PathVariable Long courseId,
-            @RequestParam String value) throws Exception {
+    public ResponseEntity<CourseDto> patchTitle(@PathVariable Long courseId, @RequestParam String value) throws Exception {
         Long requesterId = getRequesterId();
         String roleName = getRoleName();
         return ResponseEntity.ok(courseService.patchTitle(courseId, value, requesterId, roleName));
@@ -100,26 +114,15 @@ public class CourseController {
 
     @PreAuthorize("hasRole('TEACHER')")
     @PatchMapping("/{courseId}/description")
-    public ResponseEntity<CourseDto> patchDescription(@PathVariable Long courseId,
-            @RequestParam String value) throws Exception {
+    public ResponseEntity<CourseDto> patchDescription(@PathVariable Long courseId, @RequestParam String value) throws Exception {
         Long requesterId = getRequesterId();
         String roleName = getRoleName();
         return ResponseEntity.ok(courseService.patchDescription(courseId, value, requesterId, roleName));
     }
 
     @PreAuthorize("hasRole('TEACHER')")
-    @PatchMapping("/{courseId}/price")
-    public ResponseEntity<CourseDto> patchPrice(@PathVariable Long courseId,
-            @RequestParam BigDecimal value) throws Exception {
-        Long requesterId = getRequesterId();
-        String roleName = getRoleName();
-        return ResponseEntity.ok(courseService.patchPrice(courseId, value, requesterId, roleName));
-    }
-
-    @PreAuthorize("hasRole('TEACHER')")
     @PatchMapping("/{courseId}/level")
-    public ResponseEntity<CourseDto> patchLevel(@PathVariable Long courseId,
-            @RequestParam Long levelId) throws Exception {
+    public ResponseEntity<CourseDto> patchLevel(@PathVariable Long courseId, @RequestParam Long levelId) throws Exception {
         Long requesterId = getRequesterId();
         String roleName = getRoleName();
         return ResponseEntity.ok(courseService.patchLevel(courseId, levelId, requesterId, roleName));
@@ -127,11 +130,9 @@ public class CourseController {
 
     @PreAuthorize("hasRole('TEACHER')")
     @PatchMapping("/{courseId}/status")
-    public ResponseEntity<CourseDto> patchStatus(@PathVariable Long courseId,
-            @RequestParam Long statusId) throws Exception {
+    public ResponseEntity<CourseDto> patchStatus(@PathVariable Long courseId, @RequestParam Long statusId) throws Exception {
         Long requesterId = getRequesterId();
         String roleName = getRoleName();
         return ResponseEntity.ok(courseService.patchStatus(courseId, statusId, requesterId, roleName));
     }
-    
 }

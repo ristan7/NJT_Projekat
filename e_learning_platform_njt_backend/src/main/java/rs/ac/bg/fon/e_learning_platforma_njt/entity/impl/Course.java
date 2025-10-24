@@ -2,7 +2,6 @@ package rs.ac.bg.fon.e_learning_platforma_njt.entity.impl;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import rs.ac.bg.fon.e_learning_platforma_njt.entity.MyEntity;
@@ -15,10 +14,10 @@ import rs.ac.bg.fon.e_learning_platforma_njt.entity.lookup.CourseStatus;
             @Index(name = "ix_course_author", columnList = "author_id"),
             @Index(name = "ix_course_status", columnList = "course_status_id"),
             @Index(name = "ix_course_level", columnList = "course_level_id")
-        })
+        }
+)
 public class Course implements MyEntity {
 
-    /* ===================== Polja ===================== */
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "course_id")
@@ -32,11 +31,6 @@ public class Course implements MyEntity {
     @NotBlank(message = "Course description is required.")
     @Column(name = "course_description", columnDefinition = "TEXT", nullable = false)
     private String courseDescription;
-
-    @Digits(integer = 8, fraction = 2)
-    @PositiveOrZero(message = "Course price must be non-negative.")
-    @Column(name = "course_price", precision = 10, scale = 2, nullable = false)
-    private BigDecimal coursePrice = BigDecimal.ZERO;
 
     /* ====== DATUMI ====== */
     @PastOrPresent
@@ -70,7 +64,7 @@ public class Course implements MyEntity {
     @OrderBy("lessonOrderIndex ASC")
     private List<Lesson> lessons = new ArrayList<>();
 
-    /* ====== Lifecycle hook-ovi za datume ====== */
+    /* ====== Lifecycle ====== */
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
@@ -92,7 +86,7 @@ public class Course implements MyEntity {
         this.courseStatus = courseStatus;
     }
 
-    /* ====== Konstruktori ====== */
+    /* ====== Ctors ====== */
     public Course() {
     }
 
@@ -100,7 +94,7 @@ public class Course implements MyEntity {
         this.courseId = courseId;
     }
 
-    /* ====== Getteri i Setteri ====== */
+    /* ====== Get/Set ====== */
     public Long getCourseId() {
         return courseId;
     }
@@ -123,14 +117,6 @@ public class Course implements MyEntity {
 
     public void setCourseDescription(String courseDescription) {
         this.courseDescription = courseDescription;
-    }
-
-    public BigDecimal getCoursePrice() {
-        return coursePrice;
-    }
-
-    public void setCoursePrice(BigDecimal coursePrice) {
-        this.coursePrice = coursePrice;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -189,7 +175,7 @@ public class Course implements MyEntity {
         l.setCourse(null);
     }
 
-    /* ====== equals, hashCode, toString ====== */
+    /* ====== equals/hashCode/toString ====== */
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -212,7 +198,6 @@ public class Course implements MyEntity {
         return "Course{"
                 + "courseId=" + courseId
                 + ", courseTitle='" + courseTitle + '\''
-                + ", coursePrice=" + coursePrice
                 + ", courseStatus=" + (courseStatus != null ? courseStatus.getCourseStatusName() : "null")
                 + ", courseLevel=" + (courseLevel != null ? courseLevel.getCourseLevelName() : "null")
                 + '}';

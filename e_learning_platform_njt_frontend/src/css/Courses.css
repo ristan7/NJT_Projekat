@@ -1,0 +1,66 @@
+/* --- Course Editor (clean wide form) --- */
+.ce-card {
+    display: grid;
+    gap: 14px;
+    padding: 20px;
+}
+
+.ce-field {
+    display: grid;
+    gap: 8px;
+}
+
+.ce-label {
+    font-weight: 600;
+    color: #0F172A;
+}
+
+.ce-input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(15, 23, 42, .12);
+    background: #fff;
+    outline: none;
+}
+
+.ce-input:focus {
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, .15);
+}
+
+.ce-textarea {
+    resize: vertical;
+    min-height: 160px;
+}
+
+.ce-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.ce-col {
+    min-width: 0;
+}
+
+.ce-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
+    margin-top: 2px;
+}
+
+.ce-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start;
+    margin-top: 6px;
+}
+
+@media (max-width: 760px) {
+    .ce-row {
+        grid-template-columns: 1fr;
+    }
+}
