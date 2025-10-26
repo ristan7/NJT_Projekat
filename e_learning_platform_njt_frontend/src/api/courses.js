@@ -65,8 +65,9 @@ export async function getCourses({
 }
 
 export async function getCourse(courseId) {
-    const { data } = await http.get(`/courses/${courseId}`);
-    return data;
+  if (courseId == null || String(courseId).toLowerCase() === "new") return null;
+  const { data } = await http.get(`/courses/${courseId}`);
+  return data;
 }
 
 /** teacher only – kursevi autora */

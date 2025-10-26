@@ -1,3 +1,4 @@
+// src/pages/CourseManage.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
@@ -9,6 +10,10 @@ import {
     getMaterialsCount,
 } from "../api/courses";
 import "../css/CourseDetails.css";
+
+const TEST_FAIL_ADD_LESSON = false; // set true da simulira neuspeh dodavanja
+
+
 
 export default function CourseManage() {
     const { courseId } = useParams();
@@ -65,9 +70,7 @@ export default function CourseManage() {
                 if (alive) setLoading(false);
             }
         })();
-        return () => {
-            alive = false;
-        };
+        return () => { alive = false; };
     }, [courseId]);
 
     const onAddLesson = async (e) => {
@@ -75,6 +78,12 @@ export default function CourseManage() {
         if (!title.trim()) return;
         setAdding(true);
         try {
+            // ALT klik na "Add lesson" ili TEST_FAIL_ADD_LESSON simulira neuspeh
+            const altFail = e?.nativeEvent?.altKey === true;
+            if (TEST_FAIL_ADD_LESSON || altFail) {
+                throw new Error("Simulated lesson add error");
+            }
+
             const payload = {
                 title,
                 description: desc,
@@ -83,21 +92,27 @@ export default function CourseManage() {
                 freePreview: preview,
                 orderIndex: (lessons?.length ?? 0) + 1,
             };
+
             const created = await createLesson(courseId, payload);
             setLessons((prev) => [...prev, created]);
             const lid = created?.lessonId ?? created?.id;
             if (lid) setMatCounts((m) => ({ ...m, [String(lid)]: 0 }));
-            setTitle("");
-            setDesc("");
-            setTypeId("");
-            setPreview(false);
-            setAvailable(true);
+
+            // reset polja
+            setTitle(""); setDesc(""); setTypeId(""); setPreview(false); setAvailable(true);
+
+            // ✅ TRAŽENA PORUKA
+            alert("✅ Lesson successfully added !");
         } catch (e2) {
-            alert(e2?.response?.data?.message || e2?.message || "Add lesson failed.");
+            // ❌ TRAŽENA NEGATIVNA PORUKA
+            alert("❌ The system cannot add the lesson.");
         } finally {
             setAdding(false);
         }
     };
+
+
+
 
     const onDeleteLesson = async (lessonId) => {
         if (!window.confirm("Delete this lesson?")) return;
@@ -219,3 +234,5 @@ export default function CourseManage() {
         </div>
     );
 }
+
+

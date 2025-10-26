@@ -17,7 +17,7 @@ public interface MyAppRepository<E, ID> {
 
     E findById(ID id) throws Exception;
 
-    void save(E entity); //za update imace ID za kreiranje nece jer je autoincrement
+    void save(E entity);
 
     void deleteById(ID id);
 }
