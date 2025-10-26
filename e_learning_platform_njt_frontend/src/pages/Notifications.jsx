@@ -9,34 +9,53 @@ import {
   deleteNotification,
 } from "../api/api";
 import { emitUnreadChanged } from "../api/notificationsBus";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "../css/Notifications.css";
 
+/* ------------------ TEST PREKIDAČI ------------------ */
+// ALT 3.1 – simuliraj neuspeh učitavanja stranice (seti na true da testiraš)
+const TEST_FAIL_LOAD_PAGE = false;
+// ALT 6.1 – simuliraj da forma ne može da se otvori (seti na true da testiraš)
+const TEST_BLOCK_FORM = false;
+// ALT 7.1 – simuliraj neuspeh brisanja (seti na true da testiraš)
+const TEST_FAIL_DELETE = false;
+// ALT 7.2 – simuliraj neuspeh markiranja jedne notifikacije
+const TEST_FAIL_MARK_READ_ONE = false;
+// ALT 7.3 – simuliraj neuspeh markiranja svih notifikacija
+const TEST_FAIL_MARK_READ_ALL = false;
+
+/* ---------------------------------------------------- */
+
 export default function Notifications() {
+  const navigate = useNavigate();
   const [me, setMe] = useState(null);
   const [items, setItems] = useState([]);
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   // UI state
   const [onlyUnread, setOnlyUnread] = useState(false);
   const [query, setQuery] = useState("");
-  const [sortKey, setSortKey] = useState("date_desc"); // date_asc | title_asc | title_desc | type_asc | type_desc
+  const [sortKey, setSortKey] = useState("date_desc");
   const [typeFilter, setTypeFilter] = useState("all");
 
   // pagination
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  // helper: da li je user admin
-  const isAdmin = (u) => (u?.roleId === 3) || ((u?.roleName ?? "").toUpperCase() === "ADMIN");
-
+  const isAdmin = (u) =>
+    u?.roleId === 3 || ((u?.roleName ?? "").toUpperCase() === "ADMIN");
 
   // ------------------------------ Load ------------------------------
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
+
+        if (TEST_FAIL_LOAD_PAGE) {
+          throw new Error("Simulirana greška 3.1 – cannot load notifications page");
+        }
 
         const u = await getMe();
         setMe(u);
@@ -47,8 +66,17 @@ export default function Notifications() {
           getNotifications({ userId: uid, unread: false, limit: 500 }),
         ]);
 
-        setTypes(Array.isArray(tps) ? tps : []);
+        // normalno stanje
+        const effectiveTypes =
+          TEST_BLOCK_FORM ? [] : (Array.isArray(tps) ? tps : []);
+
+        setTypes(effectiveTypes);
         setItems(Array.isArray(list) ? list : []);
+      } catch (e) {
+        console.error(e);
+        setLoadError(true);
+        // ALT 3.1 – ne može da učita stranicu notifikacija
+        alert("❌ The system cannot load the notifications page.");
       } finally {
         setLoading(false);
       }
@@ -67,7 +95,6 @@ export default function Notifications() {
     }
     return m;
   }, [types]);
-
 
   const getTypeId = (n) =>
     n?.notificationTypeId ??
@@ -126,53 +153,84 @@ export default function Notifications() {
     return arr;
   }, [items, onlyUnread, query, sortKey, typeFilter, typesMap]);
 
-  // slice for current page
   const paged = useMemo(() => {
     const start = page * rowsPerPage;
     const end = start + rowsPerPage;
     return filteredSorted.slice(start, end);
   }, [filteredSorted, page, rowsPerPage]);
 
-  // reset to first page on filters/sort change
   useEffect(() => {
     setPage(0);
   }, [onlyUnread, query, sortKey, typeFilter, rowsPerPage]);
 
   // ------------------------------ Actions ------------------------------
-  async function handleMarkRead(id) {
+  async function handleMarkRead(id, simulateError = false) {
     const prev = items;
     setItems((list) =>
       list.map((n) => (n.notificationId === id || n.id === id ? { ...n, read: true } : n))
     );
     try {
+      if (simulateError || TEST_FAIL_MARK_READ_ONE) {
+        throw new Error("Simulated mark-read error (single)");
+      }
       await markNotificationRead(id);
       emitUnreadChanged();
-    } catch {
-      setItems(prev);
+      alert("✅ Notification successfully marked as read!");
+    } catch (e) {
+      console.error(e);
+      setItems(prev); // rollback
+      alert("❌ Failed to mark notification as read!");
     }
   }
 
-  async function handleMarkAll() {
+
+  function handleNewNotification() {
+    if (!isAdmin(me)) return;
+    // ALT 6.1 – nema tipova (ili test blok)
+    if (!types || types.length === 0 || loadError) {
+      alert("⚠️ The system cannot open the notification form.");
+      return;
+    }
+    navigate("/notifications/new");
+  }
+
+  async function handleMarkAll(simulateError = false) {
     if (!me) return;
     const uid = me.id ?? me.userId;
     const prev = items;
     setItems((list) => list.map((n) => ({ ...n, read: true })));
     try {
+      if (simulateError || TEST_FAIL_MARK_READ_ALL) {
+        throw new Error("Simulated mark-read error (all)");
+      }
       await markAllNotificationsRead(uid);
       emitUnreadChanged();
-    } catch {
-      setItems(prev);
+      alert("✅ All notifications successfully marked as read!");
+    } catch (e) {
+      console.error(e);
+      setItems(prev); // rollback
+      alert("❌ Failed to mark all notifications as read!");
     }
   }
 
-  async function handleDelete(id) {
+
+  // ✅ Dodata podrška za alert poruke i simulaciju neuspeha
+  async function handleDelete(id, simulateError = false) {
     const prev = items;
+    // Optimistic UI
     setItems((list) => list.filter((n) => (n.notificationId ?? n.id) !== id));
     try {
+      if (simulateError || TEST_FAIL_DELETE) {
+        throw new Error("Simulated delete error");
+      }
       await deleteNotification(id);
       emitUnreadChanged();
-    } catch {
+      alert("✅ Notification successfully deleted!");
+    } catch (e) {
+      console.error(e);
+      // rollback
       setItems(prev);
+      alert("❌ Failed to delete notification!");
     }
   }
 
@@ -218,7 +276,6 @@ export default function Notifications() {
               ))}
             </select>
 
-
             <select
               className="n-select"
               value={sortKey}
@@ -236,11 +293,21 @@ export default function Notifications() {
 
         <div className="n-right">
           {isAdmin(me) && (
-            <Link to="/notifications/new" className="btn ghost">
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={handleNewNotification}
+              disabled={loadError || loading}
+              title={loadError ? "Cannot open the notification form" : undefined}
+            >
               + New notification
-            </Link>
+            </button>
           )}
-          <button className="btn primary" onClick={handleMarkAll}>
+          <button
+            className="btn primary"
+            onClick={(e) => handleMarkAll(e?.altKey === true)}
+            title="Mark all as read (hold ALT to simulate failure)"
+          >
             Mark all as read
           </button>
         </div>
@@ -286,11 +353,20 @@ export default function Notifications() {
                   {n.read ? (
                     <span className="badge read">Read</span>
                   ) : (
-                    <button className="btn ghost sm" onClick={() => handleMarkRead(id)}>
+                    <button
+                      className="btn ghost sm"
+                      onClick={(e) => handleMarkRead(id, e?.altKey === true)}
+                      title="Mark read (hold ALT to simulate failure)"
+                    >
                       Mark read
                     </button>
                   )}
-                  <button className="btn danger sm" onClick={() => handleDelete(id)}>
+                  {/* Drži ALT pri kliku da simuliraš neuspeh brisanja */}
+                  <button
+                    className="btn danger sm"
+                    onClick={(e) => handleDelete(id, e?.altKey === true)}
+                    title="Delete (hold ALT to simulate failure)"
+                  >
                     Delete
                   </button>
                 </div>

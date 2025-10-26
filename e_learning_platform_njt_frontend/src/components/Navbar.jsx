@@ -1,23 +1,23 @@
 // src/components/Navbar.jsx
+import http from "../api/http";
 import React, { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { getMe, getUnreadCount } from "../api/api";
 import { onUnreadChanged } from "../api/notificationsBus";
 import "../App.css";
 
-function getStoredUser() {
-  try {
-    return JSON.parse(localStorage.getItem("user") || "null");
-  } catch {
-    return null;
-  }
-}
+/* ------------------ TEST PREKIDAČI ------------------ */
+// Blokiraj otvaranje "+ New course" (klik u meniju) – seti na true ili drži ALT pri kliku
+const TEST_BLOCK_NEW_COURSE = false;
+const TEST_BLOCK_MY_COURSES = false;
+const TEST_BLOCK_CHANGE_ROLE = true; // seti na true ili drži ALT pri kliku
+/* ---------------------------------------------------- */
 
+function getStoredUser() {
+  try { return JSON.parse(localStorage.getItem("user") || "null"); } catch { return null; }
+}
 function getRoleName(u) {
-  return (u?.role?.name || u?.roleName || u?.role || "")
-    .toString()
-    .trim()
-    .toUpperCase();
+  return (u?.role?.name || u?.roleName || u?.role || "").toString().trim().toUpperCase();
 }
 
 export default function Navbar() {
@@ -25,35 +25,26 @@ export default function Navbar() {
   const [badge, setBadge] = useState(0);
   const navigate = useNavigate();
 
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const isLoggedIn = !!token;
 
-  // Role iz me ili iz localStorage (fallback)
   const roleName = getRoleName(me) || getRoleName(getStoredUser());
   const isAdmin = roleName === "ADMIN";
-  const isTeacherOnly = roleName === "TEACHER"; // ⬅️ samo TEACHER, ne i ADMIN
+  const isTeacherOnly = roleName === "TEACHER"; // samo TEACHER
 
   useEffect(() => {
     if (!isLoggedIn) return;
-
     let alive = true;
 
-    // tih refresh /me
     (async () => {
       try {
         const fresh = await getMe();
         if (!alive) return;
         setMe(fresh);
-        try {
-          localStorage.setItem("user", JSON.stringify(fresh));
-        } catch { }
-      } catch {
-        // ignoriši – ne odjavljuj ovde
-      }
+        try { localStorage.setItem("user", JSON.stringify(fresh)); } catch { }
+      } catch { }
     })();
 
-    // inicijalni badge
     (async () => {
       try {
         const u = getStoredUser() || me;
@@ -64,7 +55,6 @@ export default function Navbar() {
       } catch { }
     })();
 
-    // realtime badge preko bus-a
     const off = onUnreadChanged(async () => {
       try {
         const u = getStoredUser() || me;
@@ -75,90 +65,83 @@ export default function Navbar() {
       } catch { }
     });
 
-    return () => {
-      alive = false;
-      off?.();
-    };
+    return () => { alive = false; off?.(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn]);
 
-  function handleLogout() {
-    try {
-      fetch("http://localhost:8080/api/auth/logout", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-    } catch (e) {
-      console.warn("Logout request failed", e);
-    }
-
+  async function handleLogout() {
+    try { await http.post("/auth/logout").catch(() => { }); } catch { }
+    const u = getStoredUser();
+    const displayName = [u?.firstName, u?.lastName].filter(Boolean).join(" ") || u?.username || "User";
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    navigate("/login");
+    try { if (http?.defaults?.headers?.common) delete http.defaults.headers.common.Authorization; } catch { }
+    window.alert(`✅ Successful logout!\nGoodbye, ${displayName}`);
+    navigate("/login", { replace: true });
   }
 
-  const displayName =
-    [me?.firstName, me?.lastName].filter(Boolean).join(" ") ||
-    me?.username ||
-    "User";
+  function onMyCoursesClick(e) {
+    // test-prekidač ili ALT klik
+    if (TEST_BLOCK_MY_COURSES || e?.altKey === true) {
+      e.preventDefault();
+      window.alert("⚠️ The system cannot open my courses page.");
+    }
+  }
 
+  function onChangeRoleClick(e) {
+    // ALT-klik ili prekidač simuliraju alternativni scenario
+    if (TEST_BLOCK_CHANGE_ROLE || e?.altKey === true) {
+      e.preventDefault();
+      window.alert("⚠️ The system cannot open the change role page.");
+    }
+  }
+
+
+  const displayName = [me?.firstName, me?.lastName].filter(Boolean).join(" ") || me?.username || "User";
   const userLabel = displayName;
+  const active = ({ isActive }) => ({ textDecoration: "none", opacity: isActive ? 1 : 0.85 });
 
-  const active = ({ isActive }) => ({
-    textDecoration: "none",
-    opacity: isActive ? 1 : 0.85,
-  });
+  // Guard za "+ New course"
+  function onNewCourseClick(e) {
+    if (TEST_BLOCK_NEW_COURSE || e?.altKey === true) {
+      e.preventDefault();
+      window.alert("⚠️ The system cannot open the create course form.");
+    }
+  }
 
   return (
     <nav className="nav">
       <div className="container nav-inner">
-        {/* BRAND */}
-        <Link to="/" className="brand">
-          E-Learning
-        </Link>
+        <Link to="/" className="brand">E-Learning</Link>
 
-        {/* IF NOT LOGGED IN */}
         {!isLoggedIn && (
           <div className="nav-right">
-            <Link className="btn ghost sm" to="/login">
-              Sign in
-            </Link>
-            <Link className="btn primary sm" to="/register">
-              Register
-            </Link>
+            <Link className="btn ghost sm" to="/login">Sign in</Link>
+            <Link className="btn primary sm" to="/register">Register</Link>
           </div>
         )}
 
-        {/* IF LOGGED IN */}
         {isLoggedIn && (
           <>
             <div className="nav-links">
-              <NavLink to="/" style={active} end>
-                Home
-              </NavLink>
-              <NavLink to="/courses" style={active}>
-                Courses
-              </NavLink>
-              <NavLink to="/notifications" style={active}>
-                Notifications
-              </NavLink>
+              <NavLink to="/" style={active} end>Home</NavLink>
+              <NavLink to="/courses" style={active}>Courses</NavLink>
+              <NavLink to="/notifications" style={active}>Notifications</NavLink>
 
-              {/* ADMIN-ONLY */}
               {isAdmin && (
-                <NavLink to="/admin/change-role" style={active}>
+                <NavLink to="/admin/change-role" style={active} onClick={onChangeRoleClick}>
                   Change role
                 </NavLink>
               )}
 
-              {/* TEACHER-ONLY (ADMIN NE VIDI OVO) */}
+
               {isTeacherOnly && (
                 <>
-                  <NavLink to="/teacher/courses" style={active}>
+                  <NavLink to="/teacher/courses" style={active} onClick={onMyCoursesClick}>
                     My courses
                   </NavLink>
-                  <NavLink to="/teacher/courses/new" style={active}>
+                  {/* ALT-klik ili TEST_BLOCK_NEW_COURSE blokira otvaranje */}
+                  <NavLink to="/teacher/courses/new" style={active} onClick={onNewCourseClick}>
                     + New course
                   </NavLink>
                 </>
@@ -166,21 +149,11 @@ export default function Navbar() {
             </div>
 
             <div className="nav-right">
-              {/* Bell */}
               <Link to="/notifications" className="bell" title="Notifications">
-                🔔
-                {badge > 0 && <span className="badge-dot">{badge}</span>}
+                🔔 {badge > 0 && <span className="badge-dot">{badge}</span>}
               </Link>
-
-              {/* Username chip */}
-              <span className="user-chip" title={userLabel}>
-                {userLabel}
-              </span>
-
-              {/* Logout */}
-              <button className="btn ghost sm" onClick={handleLogout}>
-                Logout
-              </button>
+              <span className="user-chip" title={userLabel}>{userLabel}</span>
+              <button className="btn ghost sm" onClick={handleLogout}>Logout</button>
             </div>
           </>
         )}

@@ -1,12 +1,18 @@
 // src/pages/AddNotification.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { getMe, getUsers, getNotificationTypes } from "../api/api";
 import "../css/AddNotification.css";
 import http from "../api/http";
 
+/* ------------------ TEST PREKIDAČ ------------------ */
+// ALT 11.1 – simuliraj neuspeh čuvanja (seti na true da testiraš)
+const TEST_FAIL_SAVE = false;
+/* --------------------------------------------------- */
+
 export default function AddNotification() {
     const nav = useNavigate();
+    const loc = useLocation();
 
     const [me, setMe] = useState(null);
     const [loaded, setLoaded] = useState(false);
@@ -22,7 +28,7 @@ export default function AddNotification() {
     const [sending, setSending] = useState(false);
     const [errors, setErrors] = useState({});
 
-    const isAdmin = (u) => (u?.roleId === 3) || ((u?.roleName ?? "").toUpperCase() === "ADMIN");
+    const isAdmin = (u) => u?.roleId === 3 || ((u?.roleName ?? "").toUpperCase() === "ADMIN");
 
     useEffect(() => {
         (async () => {
@@ -30,7 +36,6 @@ export default function AddNotification() {
                 const u = await getMe();
                 setMe(u);
 
-                // samo admin može na ovu stranu
                 if (!isAdmin(u)) {
                     nav("/notifications", { replace: true });
                     return;
@@ -39,13 +44,21 @@ export default function AddNotification() {
                 const [users, tps] = await Promise.all([getUsers(), getNotificationTypes()]);
                 setAllUsers(Array.isArray(users) ? users : []);
                 setTypes(Array.isArray(tps) ? tps : []);
+
+                // Opcioni guard na osnovu query parametara (npr. /notifications/new?fail=form)
+                const simulateFail = new URLSearchParams(loc.search).get("fail") === "form";
+                if (simulateFail) {
+                    alert("⚠️ The system cannot open the notification form.");
+                    nav("/notifications", { replace: true });
+                    return;
+                }
             } catch (e) {
                 console.error(e);
             } finally {
                 setLoaded(true);
             }
         })();
-    }, [nav]);
+    }, [nav, loc.search]);
 
     const meId = me?.id ?? me?.userId;
 
@@ -79,30 +92,55 @@ export default function AddNotification() {
             const uid = Number(userId);
             const tid = Number(typeId);
 
-            // Šaljemo i “flat” i imena koja koristi tvoj bek (robusno);
-            // Jackson ignoriše nepoznata polja.
             const payload = {
-                // flat
-                title: title,
+                title,
                 message: messageFront,
                 userId: uid,
                 typeId: tid,
-
-                // po tvojim nazivima u entitetima/DTO
                 notificationTitle: title,
                 notificationMessage: messageFront,
                 notificationTypeId: tid,
-
-                // ako bek očekuje objekte (u nekim verzijama)
                 user: { userId: uid },
                 notificationType: { notificationTypeId: tid },
             };
 
-            await http.post(`/notifications`, payload); // baseURL = /api, JWT interceptor aktivan
+            // ALT 11.1 – simuliraj neuspeh čuvanja
+            if (TEST_FAIL_SAVE) {
+                throw new Error("Simulirana greška 11.1 – cannot save notification");
+            }
+
+            await http.post(`/notifications`, payload);
+
+            const target = (selectableUsers || []).find(
+                (u) => Number(u.id ?? u.userId) === Number(uid)
+            );
+            const recipientName =
+                [target?.firstName, target?.lastName].filter(Boolean).join(" ") ||
+                target?.username ||
+                `User #${uid}`;
+
+            window.alert(
+                `✅ Notification successfully added!\nTo: ${recipientName}\nTitle: ${title}`
+            );
+
             nav("/notifications");
         } catch (err) {
             console.error(err);
-            alert(err?.response?.data?.message || err.message || "Error while sending notification.");
+
+            if (
+                err?.response?.status === 500 ||
+                String(err?.message || "").includes("Network") ||
+                String(err?.message || "").includes("Simulirana greška 11.1")
+            ) {
+                // ALT 11.1
+                alert("❌ The system cannot save the notification.");
+            } else {
+                alert(
+                    err?.response?.data?.message ||
+                    err.message ||
+                    "Error while sending notification."
+                );
+            }
         } finally {
             setSending(false);
         }

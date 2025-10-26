@@ -21,7 +21,7 @@ import rs.ac.bg.fon.e_learning_platforma_njt.service.NotificationService;
 
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
-@RequestMapping("/api/notifications") // plural — slaže se sa frontom
+@RequestMapping("/api/notifications")
 public class NotificationController {
 
     private final NotificationService service;
@@ -31,7 +31,6 @@ public class NotificationController {
     }
 
     // ---------- COLLECTION ----------
-    // import-e ostavi iste, ALI izbaci import za AuthenticationPrincipal
     @GetMapping
     @Operation(summary = "Retrieve notifications (filters: userId, unread, limit).")
     public ResponseEntity<List<NotificationDto>> getAll(
@@ -40,10 +39,8 @@ public class NotificationController {
             @RequestParam(required = false, defaultValue = "false") boolean unread,
             @RequestParam(required = false, defaultValue = "50") int limit) {
 
-        // 1) preferiraj ?userId= ako je poslat
         Long effectiveUserId = userId != null ? userId : headerUserId;
 
-        // 2) bez logina – ne dozvoljavamo listanje bez korisnika
         if (effectiveUserId == null) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
